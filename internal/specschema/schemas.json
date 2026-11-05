@@ -1,0 +1,1195 @@
+{
+ "AccountSpec": {
+  "type": "object",
+  "required": [
+   "provider_id",
+   "display_name",
+   "credential_ref",
+   "billing",
+   "allowed_models",
+   "max_concurrency",
+   "requests_per_minute",
+   "enabled",
+   "labels"
+  ],
+  "props": {
+   "allowed_models": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "billing": {
+    "type": "string",
+    "enum": [
+     "metered_api",
+     "subscription",
+     "free",
+     "local"
+    ]
+   },
+   "credential_ref": {
+    "type": "string"
+   },
+   "display_name": {
+    "type": "string"
+   },
+   "enabled": {
+    "type": "boolean"
+   },
+   "labels": {
+    "type": "object",
+    "map": true
+   },
+   "max_concurrency": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "provider_id": {
+    "type": "string"
+   },
+   "requests_per_minute": {
+    "type": "integer",
+    "minimum": 0
+   }
+  }
+ },
+ "AliasSpec": {
+  "type": "object",
+  "required": [
+   "description",
+   "pool_id",
+   "alias_id",
+   "required_capabilities"
+  ],
+  "props": {
+   "alias_id": {
+    "type": "string"
+   },
+   "description": {
+    "type": "string"
+   },
+   "pool_id": {
+    "type": "string"
+   },
+   "required_capabilities": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   }
+  }
+ },
+ "BindingSpec": {
+  "type": "object",
+  "required": [
+   "display_name",
+   "owner_kind",
+   "owner_id",
+   "plan_id",
+   "project_id",
+   "allowed_project_ids",
+   "expected_harness",
+   "allowed_models",
+   "limits",
+   "trust",
+   "external_refs",
+   "enabled"
+  ],
+  "props": {
+   "allowed_models": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "allowed_project_ids": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "display_name": {
+    "type": "string"
+   },
+   "enabled": {
+    "type": "boolean"
+   },
+   "expected_harness": {
+    "type": "string",
+    "enum": [
+     "claude_code",
+     "codex",
+     "opencode",
+     "pi",
+     "generic",
+     ""
+    ]
+   },
+   "external_refs": {
+    "type": "object",
+    "map": true
+   },
+   "limits": {
+    "type": "object",
+    "required": [
+     "requests_per_minute",
+     "max_concurrency",
+     "max_request_bytes"
+    ],
+    "props": {
+     "max_concurrency": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "max_request_bytes": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "requests_per_minute": {
+      "type": "integer",
+      "minimum": 0
+     }
+    }
+   },
+   "owner_id": {
+    "type": "string"
+   },
+   "owner_kind": {
+    "type": "string",
+    "enum": [
+     "user",
+     "service",
+     "none",
+     ""
+    ]
+   },
+   "plan_id": {
+    "type": "string"
+   },
+   "project_id": {
+    "type": "string"
+   },
+   "trust": {
+    "type": "object",
+    "required": [
+     "session_hints",
+     "project_hints",
+     "intent_hints"
+    ],
+    "props": {
+     "intent_hints": {
+      "type": "boolean"
+     },
+     "project_hints": {
+      "type": "boolean"
+     },
+     "session_hints": {
+      "type": "boolean"
+     }
+    }
+   }
+  }
+ },
+ "BudgetSpec": {
+  "type": "object",
+  "required": [
+   "scope",
+   "period",
+   "limit",
+   "currency",
+   "enabled"
+  ],
+  "props": {
+   "cost_kinds": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "currency": {
+    "type": "string"
+   },
+   "enabled": {
+    "type": "boolean"
+   },
+   "enforcement": {
+    "type": "string",
+    "enum": [
+     "block",
+     "warn"
+    ]
+   },
+   "limit": {
+    "type": "string"
+   },
+   "period": {
+    "type": "string",
+    "enum": [
+     "day",
+     "week",
+     "month"
+    ]
+   },
+   "scope": {
+    "type": "string",
+    "enum": [
+     "global",
+     "workspace",
+     "project",
+     "binding",
+     "account"
+    ]
+   },
+   "scope_id": {
+    "type": "string"
+   },
+   "timezone": {
+    "type": "string"
+   },
+   "warn_at": {
+    "type": "number",
+    "minimum": 0
+   }
+  }
+ },
+ "ChannelSpec": {
+  "type": "object",
+  "required": [
+   "type",
+   "enabled"
+  ],
+  "props": {
+   "allow_private_network": {
+    "type": "boolean"
+   },
+   "api_base_url": {
+    "type": "string"
+   },
+   "digest_minutes": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "enabled": {
+    "type": "boolean"
+   },
+   "quiet_hours": {
+    "type": "object",
+    "required": [
+     "enabled"
+    ],
+    "props": {
+     "critical_bypass": {
+      "type": "boolean"
+     },
+     "enabled": {
+      "type": "boolean"
+     },
+     "end": {
+      "type": "string"
+     },
+     "start": {
+      "type": "string"
+     }
+    }
+   },
+   "rate_per_minute": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "secret_ref": {
+    "type": "string"
+   },
+   "telegram_chat_id": {
+    "type": "string"
+   },
+   "timezone": {
+    "type": "string"
+   },
+   "type": {
+    "type": "string",
+    "enum": [
+     "telegram",
+     "slack",
+     "discord",
+     "webhook"
+    ]
+   },
+   "webhook_url": {
+    "type": "string"
+   }
+  }
+ },
+ "DestinationSpec": {
+  "type": "object",
+  "required": [
+   "type",
+   "enabled"
+  ],
+  "props": {
+   "allow_private_network": {
+    "type": "boolean"
+   },
+   "ca_ref": {
+    "type": "string"
+   },
+   "creds_ref": {
+    "type": "string"
+   },
+   "enabled": {
+    "type": "boolean"
+   },
+   "filter": {
+    "type": "object",
+    "props": {
+     "events": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "min_severity": {
+      "type": "string",
+      "enum": [
+       "info",
+       "warning",
+       "critical",
+       ""
+      ]
+     },
+     "subjects": {
+      "type": "object",
+      "map": true
+     }
+    }
+   },
+   "headers": {
+    "type": "object",
+    "map": true
+   },
+   "max_age_hours": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "max_attempts": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "pulse_source": {
+    "type": "string"
+   },
+   "pulse_url": {
+    "type": "string"
+   },
+   "timeout_seconds": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "type": {
+    "type": "string",
+    "enum": [
+     "pulse",
+     "webhook"
+    ]
+   },
+   "webhook_url": {
+    "type": "string"
+   }
+  }
+ },
+ "EntitlementSpec": {
+  "type": "object",
+  "required": [
+   "account_id",
+   "plan_name",
+   "fee",
+   "currency",
+   "period",
+   "starts_on",
+   "ends_on",
+   "windows"
+  ],
+  "props": {
+   "account_id": {
+    "type": "string"
+   },
+   "currency": {
+    "type": "string"
+   },
+   "ends_on": {
+    "type": "string"
+   },
+   "fee": {
+    "type": "string"
+   },
+   "period": {
+    "type": "string",
+    "enum": [
+     "monthly",
+     "yearly"
+    ]
+   },
+   "plan_name": {
+    "type": "string"
+   },
+   "starts_on": {
+    "type": "string"
+   },
+   "windows": {
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": [
+      "name",
+      "seconds",
+      "unit"
+     ],
+     "props": {
+      "limit": {
+       "type": "integer"
+      },
+      "name": {
+       "type": "string"
+      },
+      "seconds": {
+       "type": "integer",
+       "minimum": 60
+      },
+      "unit": {
+       "type": "string",
+       "enum": [
+        "percent",
+        "tokens",
+        "requests",
+        "credits",
+        "unknown"
+       ]
+      }
+     }
+    }
+   }
+  }
+ },
+ "NotificationRuleSpec": {
+  "type": "object",
+  "required": [
+   "enabled",
+   "filter",
+   "channel_ids"
+  ],
+  "props": {
+   "channel_ids": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "cooldown_seconds": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "enabled": {
+    "type": "boolean"
+   },
+   "filter": {
+    "type": "object",
+    "props": {
+     "events": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "min_severity": {
+      "type": "string",
+      "enum": [
+       "info",
+       "warning",
+       "critical",
+       ""
+      ]
+     },
+     "subjects": {
+      "type": "object",
+      "map": true
+     }
+    }
+   },
+   "group_seconds": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "recovery": {
+    "type": "boolean"
+   },
+   "template": {
+    "type": "string"
+   }
+  }
+ },
+ "PlanDocument": {
+  "type": "object",
+  "required": [
+   "schema_version",
+   "model_mappings",
+   "default_alias_id",
+   "restrictions",
+   "fallback"
+  ],
+  "props": {
+   "compatibility": {
+    "type": "object",
+    "props": {
+     "allowed_losses": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "on_breaker_open": {
+      "type": "string",
+      "enum": [
+       "fail",
+       "passthrough"
+      ]
+     },
+     "unenforceable_budget": {
+      "type": "string",
+      "enum": [
+       "block",
+       "allow"
+      ]
+     },
+     "unknown_usage": {
+      "type": "string",
+      "enum": [
+       "record",
+       "estimate"
+      ]
+     }
+    }
+   },
+   "default_alias_id": {
+    "type": "string"
+   },
+   "engine": {},
+   "fallback": {
+    "type": "object",
+    "required": [
+     "steps",
+     "max_attempts",
+     "allow_paid_fallback",
+     "wait_max_seconds"
+    ],
+    "props": {
+     "allow_paid_fallback": {
+      "type": "boolean"
+     },
+     "max_attempts": {
+      "type": "integer",
+      "minimum": 1
+     },
+     "steps": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "wait_max_seconds": {
+      "type": "integer",
+      "minimum": 0
+     }
+    }
+   },
+   "intent": {
+    "type": "object",
+    "props": {
+     "alias_id": {
+      "type": "string"
+     },
+     "labels": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "max_input_chars": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "max_latency_ms": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "off",
+       "heuristic",
+       "model"
+      ]
+     },
+     "send_content": {
+      "type": "boolean"
+     }
+    }
+   },
+   "model_mappings": {
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": [
+      "match",
+      "alias_id",
+      "note"
+     ],
+     "props": {
+      "alias_id": {
+       "type": "string"
+      },
+      "match": {
+       "type": "string"
+      },
+      "note": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "privacy": {
+    "type": "object",
+    "props": {
+     "policy_id": {
+      "type": "string"
+     },
+     "trace_policy_id": {
+      "type": "string"
+     }
+    }
+   },
+   "restrictions": {
+    "type": "object",
+    "required": [
+     "allowed_provider_ids",
+     "denied_provider_ids",
+     "allowed_billing",
+     "allowed_classifications",
+     "required_capabilities"
+    ],
+    "props": {
+     "allowed_billing": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "allowed_classifications": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "allowed_provider_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "denied_provider_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "required_capabilities": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "schema_version": {
+    "type": "integer"
+   }
+  }
+ },
+ "PlanSpec": {
+  "type": "object",
+  "required": [
+   "display_name",
+   "description"
+  ],
+  "props": {
+   "description": {
+    "type": "string"
+   },
+   "display_name": {
+    "type": "string"
+   }
+  }
+ },
+ "PoolSpec": {
+  "type": "object",
+  "required": [
+   "display_name",
+   "strategy",
+   "affinity",
+   "members"
+  ],
+  "props": {
+   "affinity": {
+    "type": "string",
+    "enum": [
+     "session",
+     "none",
+     ""
+    ]
+   },
+   "display_name": {
+    "type": "string"
+   },
+   "members": {
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": [
+      "account_id",
+      "model",
+      "priority",
+      "weight"
+     ],
+     "props": {
+      "account_id": {
+       "type": "string"
+      },
+      "model": {
+       "type": "string"
+      },
+      "priority": {
+       "type": "integer"
+      },
+      "weight": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    }
+   },
+   "strategy": {
+    "type": "string",
+    "enum": [
+     "ordered",
+     "weighted",
+     "reset_soonest",
+     "least_used",
+     "round_robin",
+     ""
+    ]
+   }
+  }
+ },
+ "PrivacyPolicySpec": {
+  "type": "object",
+  "required": [
+   "required"
+  ],
+  "props": {
+   "allow": {
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": [
+      "name",
+      "pattern"
+     ],
+     "props": {
+      "detectors": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "name": {
+       "type": "string"
+      },
+      "pattern": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "allow_unmasked_fallback": {
+    "type": "boolean"
+   },
+   "description": {
+    "type": "string"
+   },
+   "detector_actions": {
+    "type": "object",
+    "map": true
+   },
+   "detectors": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "personal_data": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "required": {
+    "type": "boolean"
+   },
+   "restore_in_responses": {
+    "type": "boolean"
+   },
+   "rules": {
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": [
+      "name",
+      "pattern",
+      "action"
+     ],
+     "props": {
+      "action": {
+       "type": "string",
+       "enum": [
+        "mask",
+        "block",
+        "warn"
+       ]
+      },
+      "group": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "name": {
+       "type": "string"
+      },
+      "pattern": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "secret_values_ref": {
+    "type": "string"
+   },
+   "supplementary": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "tool_arg_restore": {
+    "type": "object",
+    "required": [
+     "enabled"
+    ],
+    "props": {
+     "allowed_hosts": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "enabled": {
+      "type": "boolean"
+     },
+     "fields": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "tools": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   }
+  }
+ },
+ "ProjectSpec": {
+  "type": "object",
+  "required": [
+   "workspace_id",
+   "display_name",
+   "description",
+   "external_refs"
+  ],
+  "props": {
+   "description": {
+    "type": "string"
+   },
+   "display_name": {
+    "type": "string"
+   },
+   "external_refs": {
+    "type": "object",
+    "map": true
+   },
+   "workspace_id": {
+    "type": "string"
+   }
+  }
+ },
+ "ProviderSpec": {
+  "type": "object",
+  "required": [
+   "type",
+   "display_name",
+   "base_url",
+   "allow_private_network",
+   "classification",
+   "headers",
+   "request_timeout_seconds",
+   "stream_idle_timeout_seconds",
+   "models"
+  ],
+  "props": {
+   "allow_private_network": {
+    "type": "boolean"
+   },
+   "base_url": {
+    "type": "string"
+   },
+   "classification": {
+    "type": "string",
+    "enum": [
+     "official",
+     "partial",
+     "unofficial",
+     "local",
+     ""
+    ]
+   },
+   "display_name": {
+    "type": "string"
+   },
+   "headers": {
+    "type": "object",
+    "map": true
+   },
+   "models": {
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": [
+      "id",
+      "display_name",
+      "context_window",
+      "max_output_tokens",
+      "capabilities"
+     ],
+     "props": {
+      "capabilities": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "context_window": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "display_name": {
+       "type": "string"
+      },
+      "id": {
+       "type": "string"
+      },
+      "max_output_tokens": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "pricing": {
+       "type": "object",
+       "required": [
+        "currency",
+        "input_per_mtok",
+        "output_per_mtok",
+        "cache_read_per_mtok",
+        "cache_write_per_mtok",
+        "price_version"
+       ],
+       "props": {
+        "cache_read_per_mtok": {
+         "type": "string"
+        },
+        "cache_write_per_mtok": {
+         "type": "string"
+        },
+        "currency": {
+         "type": "string"
+        },
+        "input_per_mtok": {
+         "type": "string"
+        },
+        "output_per_mtok": {
+         "type": "string"
+        },
+        "price_version": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    }
+   },
+   "request_timeout_seconds": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "stream_idle_timeout_seconds": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "type": {
+    "type": "string",
+    "enum": [
+     "anthropic",
+     "openai",
+     "gemini",
+     "openai_compatible",
+     "ollama",
+     "claude_code",
+     "codex"
+    ]
+   }
+  }
+ },
+ "QuotaMonitorSpec": {
+  "type": "object",
+  "required": [
+   "adapter",
+   "enabled"
+  ],
+  "props": {
+   "access_token_ref": {
+    "type": "string"
+   },
+   "account_id": {
+    "type": "string"
+   },
+   "acknowledge_terms_risk": {
+    "type": "boolean"
+   },
+   "adapter": {
+    "type": "string"
+   },
+   "api_key_ref": {
+    "type": "string"
+   },
+   "enabled": {
+    "type": "boolean"
+   },
+   "exhausted_below": {
+    "type": "number",
+    "minimum": 0
+   },
+   "management_key_ref": {
+    "type": "string"
+   },
+   "options": {
+    "type": "object",
+    "map": true
+   },
+   "poll_interval_secs": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "service_account_ref": {
+    "type": "string"
+   },
+   "shared_scope_id": {
+    "type": "string"
+   },
+   "stale_after_secs": {
+    "type": "integer",
+    "minimum": 0
+   }
+  }
+ },
+ "TracePolicySpec": {
+  "type": "object",
+  "required": [
+   "mode",
+   "retention"
+  ],
+  "props": {
+   "allow_export": {
+    "type": "boolean"
+   },
+   "custom_ttl_seconds": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "max_total_bytes": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "max_trace_bytes": {
+    "type": "integer",
+    "minimum": 0
+   },
+   "mode": {
+    "type": "string",
+    "enum": [
+     "off",
+     "masked_diagnostic",
+     "masked_full",
+     "unredacted"
+    ]
+   },
+   "redaction_policy_id": {
+    "type": "string"
+   },
+   "retention": {
+    "type": "string",
+    "enum": [
+     "24h",
+     "3d",
+     "7d",
+     "custom"
+    ]
+   },
+   "sample_rate": {
+    "type": "number",
+    "minimum": 0
+   },
+   "sections": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   },
+   "unredacted_until": {
+    "type": "string"
+   }
+  }
+ },
+ "WorkspaceSpec": {
+  "type": "object",
+  "required": [
+   "display_name",
+   "description"
+  ],
+  "props": {
+   "description": {
+    "type": "string"
+   },
+   "display_name": {
+    "type": "string"
+   }
+  }
+ }
+}

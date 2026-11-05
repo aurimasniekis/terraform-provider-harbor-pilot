@@ -1,0 +1,8 @@
+/terraform-provider-harbor-pilot
+/bin/
+/dist/
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
