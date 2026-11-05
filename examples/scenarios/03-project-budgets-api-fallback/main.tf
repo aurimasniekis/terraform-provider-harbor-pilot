@@ -57,7 +57,7 @@ resource "harborpilot_provider_account" "subscription" {
   spec = jsonencode({
     provider_id    = harborpilot_provider.claude_code.id
     billing        = "subscription"
-    credential_ref = "env:CLAUDE_CODE_OAUTH_TOKEN"
+    credential_ref = "env:HP_SECRET_CLAUDE_CODE_OAUTH_TOKEN"
     enabled        = true
   })
 }
@@ -67,7 +67,7 @@ resource "harborpilot_provider_account" "api" {
   spec = jsonencode({
     provider_id         = harborpilot_provider.anthropic.id
     billing             = "metered_api"
-    credential_ref      = "env:ANTHROPIC_API_KEY"
+    credential_ref      = "env:HP_SECRET_ANTHROPIC_API_KEY"
     requests_per_minute = 120
     enabled             = true
   })

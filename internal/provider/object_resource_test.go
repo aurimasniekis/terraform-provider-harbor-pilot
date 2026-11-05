@@ -60,7 +60,7 @@ resource "harborpilot_provider_account" "a" {
   spec = jsonencode({
     provider_id    = harborpilot_provider.api.id
     billing        = "metered_api"
-    credential_ref = "env:ACC_UPSTREAM_KEY"
+    credential_ref = "env:HP_SECRET_ACC_UPSTREAM_KEY"
     enabled        = true
     labels         = { team = "platform" }
   })
@@ -142,7 +142,7 @@ resource "harborpilot_quota_monitor" "q" {
   spec = jsonencode({
     adapter     = "deepseek"
     account_id  = harborpilot_provider_account.a.id
-    api_key_ref = "env:ACC_DEEPSEEK_KEY"
+    api_key_ref = "env:HP_SECRET_ACC_DEEPSEEK_KEY"
     enabled     = false
   })
 }

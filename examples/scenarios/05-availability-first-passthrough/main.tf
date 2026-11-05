@@ -32,7 +32,7 @@ resource "harborpilot_provider_account" "anthropic" {
   spec = jsonencode({
     provider_id    = harborpilot_provider.anthropic.id
     billing        = "metered_api"
-    credential_ref = "env:ANTHROPIC_API_KEY"
+    credential_ref = "env:HP_SECRET_ANTHROPIC_API_KEY"
     enabled        = true
   })
 }
@@ -42,7 +42,7 @@ resource "harborpilot_provider_account" "openrouter" {
   spec = jsonencode({
     provider_id    = harborpilot_provider.openrouter.id
     billing        = "metered_api"
-    credential_ref = "env:OPENROUTER_API_KEY"
+    credential_ref = "env:HP_SECRET_OPENROUTER_API_KEY"
     enabled        = true
   })
 }

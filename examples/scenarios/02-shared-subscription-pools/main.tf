@@ -36,8 +36,8 @@ resource "harborpilot_provider" "codex" {
 
 locals {
   claude_accounts = {
-    alice = "env:CLAUDE_TOKEN_ALICE"
-    bob   = "env:CLAUDE_TOKEN_BOB"
+    alice = "env:HP_SECRET_CLAUDE_TOKEN_ALICE"
+    bob   = "env:HP_SECRET_CLAUDE_TOKEN_BOB"
   }
 }
 

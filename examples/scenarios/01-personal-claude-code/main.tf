@@ -37,7 +37,7 @@ resource "harborpilot_provider_account" "me" {
     billing      = "subscription"
     # A long-lived token from `claude setup-token`, read by the server from
     # its own environment. It never passes through Terraform.
-    credential_ref  = "env:CLAUDE_CODE_OAUTH_TOKEN"
+    credential_ref  = "env:HP_SECRET_CLAUDE_CODE_OAUTH_TOKEN"
     max_concurrency = 2
     enabled         = true
   })
@@ -66,7 +66,7 @@ resource "harborpilot_quota_monitor" "max" {
     adapter                = "claude_subscription"
     account_id             = harborpilot_provider_account.me.id
     options                = { token_source = "env" }
-    access_token_ref       = "env:CLAUDE_CODE_OAUTH_TOKEN"
+    access_token_ref       = "env:HP_SECRET_CLAUDE_CODE_OAUTH_TOKEN"
     acknowledge_terms_risk = true
     enabled                = var.enable_quota_polling
   })

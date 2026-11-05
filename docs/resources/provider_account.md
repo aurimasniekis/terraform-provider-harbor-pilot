@@ -3,13 +3,13 @@
 page_title: "harborpilot_provider_account Resource - harborpilot"
 subcategory: ""
 description: |-
-  A credential for a provider. Prefer credential_ref (env:NAME or file:/path) in the spec; otherwise use the write-only credential secret.
+  A credential for a provider. Prefer credential_ref (env:NAME with an allowed prefix such as HP_SECRET_, or file:/path) in the spec; otherwise use the write-only credential secret.
   Changes made outside Terraform are detected on refresh and shown as a diff of spec.
 ---
 
 # harborpilot_provider_account (Resource)
 
-A credential for a provider. Prefer `credential_ref` (env:NAME or file:/path) in the spec; otherwise use the write-only `credential` secret.
+A credential for a provider. Prefer `credential_ref` (env:NAME with an allowed prefix such as HP_SECRET_, or file:/path) in the spec; otherwise use the write-only `credential` secret.
 
 Changes made outside Terraform are detected on refresh and shown as a diff of `spec`.
 
@@ -21,7 +21,7 @@ resource "harborpilot_provider_account" "anthropic" {
   spec = jsonencode({
     provider_id         = harborpilot_provider.anthropic.id
     billing             = "metered_api"
-    credential_ref      = "env:ANTHROPIC_API_KEY" # resolved by the server
+    credential_ref      = "env:HP_SECRET_ANTHROPIC_API_KEY" # resolved by the server
     requests_per_minute = 120
     labels              = { team = "platform" }
     enabled             = true

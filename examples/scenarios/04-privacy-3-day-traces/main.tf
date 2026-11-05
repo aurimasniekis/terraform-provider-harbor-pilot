@@ -51,7 +51,7 @@ resource "harborpilot_provider_account" "api" {
   spec = jsonencode({
     provider_id    = harborpilot_provider.api.id
     billing        = "metered_api"
-    credential_ref = "env:OPENAI_API_KEY"
+    credential_ref = "env:HP_SECRET_OPENAI_API_KEY"
     enabled        = true
   })
 }

@@ -25,7 +25,7 @@ var Kinds = []Kind{
 		About: "An upstream model provider (API, OpenAI-compatible, local, or a CLI bridge) and its models."},
 	{TypeName: "provider_account", Plural: "provider-accounts", Schema: "AccountSpec", Title: "provider account",
 		Secrets: []string{"credential"},
-		About:   "A credential for a provider. Prefer `credential_ref` (env:NAME or file:/path) in the spec; otherwise use the write-only `credential` secret."},
+		About:   "A credential for a provider. Prefer `credential_ref` (env:NAME with an allowed prefix such as HP_SECRET_, or file:/path) in the spec; otherwise use the write-only `credential` secret."},
 	{TypeName: "subscription_entitlement", Plural: "subscription-entitlements", Schema: "EntitlementSpec", Title: "subscription entitlement",
 		About: "Subscription terms of an account: fee, period and known usage windows."},
 	{TypeName: "pool", Plural: "pools", Schema: "PoolSpec", Title: "pool",

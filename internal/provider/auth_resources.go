@@ -391,7 +391,7 @@ func (r *oidcProviderResource) Schema(_ context.Context, _ resource.SchemaReques
 			"issuer":       schema.StringAttribute{Required: true, MarkdownDescription: "Issuer URL (https; http only with `allow_private_network`)."},
 			"client_id":    schema.StringAttribute{Required: true},
 			"client_secret_ref": schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString(""),
-				MarkdownDescription: "`env:NAME` or `file:/path` resolved by the server."},
+				MarkdownDescription: "`env:NAME` or `file:/path` resolved by the server. Env variables must start with an allowed prefix (default `HP_SECRET_`)."},
 			"client_secret_wo": schema.StringAttribute{Optional: true, Sensitive: true, WriteOnly: true,
 				MarkdownDescription: "Write-only client secret (Terraform 1.11+). Sent on create and when `client_secret_wo_version` changes."},
 			"client_secret_wo_version": schema.Int64Attribute{Optional: true, MarkdownDescription: "Change to send `client_secret_wo` again."},

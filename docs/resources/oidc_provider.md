@@ -50,7 +50,7 @@ resource "harborpilot_oidc_provider" "porch" {
 - `allow_private_network` (Boolean)
 - `allowed_algs` (List of String) Accepted ID token algorithms (default ES256, RS256, EdDSA).
 - `allowed_domains` (Set of String)
-- `client_secret_ref` (String) `env:NAME` or `file:/path` resolved by the server.
+- `client_secret_ref` (String) `env:NAME` or `file:/path` resolved by the server. Env variables must start with an allowed prefix (default `HP_SECRET_`).
 - `client_secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only client secret (Terraform 1.11+). Sent on create and when `client_secret_wo_version` changes.
 - `client_secret_wo_version` (Number) Change to send `client_secret_wo` again.
 - `default_role` (String)

@@ -55,7 +55,7 @@ resource "harborpilot_provider_account" "api" {
   spec = jsonencode({
     provider_id    = harborpilot_provider.api.id
     billing        = "metered_api"
-    credential_ref = "env:ANTHROPIC_API_KEY"
+    credential_ref = "env:HP_SECRET_ANTHROPIC_API_KEY"
     enabled        = true
   })
 }

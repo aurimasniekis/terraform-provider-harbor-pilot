@@ -54,7 +54,7 @@ resource "harborpilot_notification_channel" "telegram" {
   spec = jsonencode({
     type             = "telegram"
     telegram_chat_id = "-1001234567890"
-    secret_ref       = "env:TELEGRAM_BOT_TOKEN"
+    secret_ref       = "env:HP_SECRET_TELEGRAM_BOT_TOKEN"
     timezone         = "Europe/Vilnius"
     quiet_hours      = { enabled = true, start = "22:00", end = "07:00", critical_bypass = true }
     rate_per_minute  = 20
@@ -66,7 +66,7 @@ resource "harborpilot_notification_channel" "slack" {
   name = "${var.prefix}-slack"
   spec = jsonencode({
     type       = "slack"
-    secret_ref = "env:SLACK_WEBHOOK_URL"
+    secret_ref = "env:HP_SECRET_SLACK_WEBHOOK_URL"
     enabled    = var.enable_delivery
   })
 }
