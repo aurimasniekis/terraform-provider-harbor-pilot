@@ -38,7 +38,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "usage: genschema OPENAPI_YAML OUT_JSON")
 		os.Exit(2)
 	}
-	b, err := os.ReadFile(os.Args[1])
+	b, err := os.ReadFile(os.Args[1]) //nolint:gosec // developer tool input
 	if err != nil {
 		panic(err)
 	}

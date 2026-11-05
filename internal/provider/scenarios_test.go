@@ -71,6 +71,12 @@ func TestAccScenarioL(t *testing.T) {
 		t.Fatalf("expected 7 scenario examples, found %d (%v)", len(dirs), err)
 	}
 	tf := terraformBinary(t)
+	if probe, err := tfexec.NewTerraform(t.TempDir(), tf); err == nil {
+		// The examples use write-only arguments (Terraform 1.11+).
+		if v, _, err := probe.Version(context.Background(), true); err == nil && v.LessThan(version.Must(version.NewVersion("1.11.0"))) {
+			t.Skipf("examples require Terraform 1.11 or later (have %s)", v)
+		}
+	}
 	rc := providerBinary(t)
 	for _, dir := range dirs {
 		t.Run(filepath.Base(dir), func(t *testing.T) {

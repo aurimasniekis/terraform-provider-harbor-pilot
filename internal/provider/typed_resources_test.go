@@ -112,7 +112,7 @@ resource "harborpilot_gateway_credential" "plain" {
 				return nil
 			}
 			if _, err := srv.Client.GetObject(context.Background(), "client-bindings", bindingID); !client.IsNotFound(err) {
-				return fmt.Errorf("binding still exists: %v", err)
+				return fmt.Errorf("binding still exists: %w", err)
 			}
 			return nil
 		},

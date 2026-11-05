@@ -174,7 +174,7 @@ type getAttr interface {
 // apply copies server fields into the model. The user's spec is kept when
 // the server's canonical spec matches what Terraform last wrote; otherwise
 // the server's spec replaces it so the next plan shows the difference.
-func (r *objectResource) apply(ctx context.Context, m *objectSecretModel, o *client.Object, lastCanonical []byte) (canonical string, diags diag.Diagnostics) {
+func (r *objectResource) apply(m *objectSecretModel, o *client.Object, lastCanonical []byte) (canonical string, diags diag.Diagnostics) {
 	canonical, err := specschema.Canonical(o.Spec)
 	if err != nil {
 		diags.AddError("Invalid spec from server", err.Error())
@@ -225,7 +225,7 @@ func (r *objectResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 	userSpec := m.Spec
-	canonical, d := r.apply(ctx, m, o, nil)
+	canonical, d := r.apply(m, o, nil)
 	resp.Diagnostics.Append(d...)
 	m.Spec = userSpec
 	resp.Diagnostics.Append(resp.Private.SetKey(ctx, privateSpecKey, []byte(canonical))...)
@@ -249,7 +249,7 @@ func (r *objectResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 	last, d := req.Private.GetKey(ctx, privateSpecKey)
 	resp.Diagnostics.Append(d...)
-	canonical, d := r.apply(ctx, m, o, last)
+	canonical, d := r.apply(m, o, last)
 	resp.Diagnostics.Append(d...)
 	if string(last) != canonical {
 		resp.Diagnostics.Append(resp.Private.SetKey(ctx, privateSpecKey, []byte(canonical))...)
@@ -280,7 +280,7 @@ func (r *objectResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 	userSpec := plan.Spec
-	canonical, d := r.apply(ctx, plan, o, nil)
+	canonical, d := r.apply(plan, o, nil)
 	resp.Diagnostics.Append(d...)
 	plan.Spec = userSpec
 	resp.Diagnostics.Append(resp.Private.SetKey(ctx, privateSpecKey, []byte(canonical))...)

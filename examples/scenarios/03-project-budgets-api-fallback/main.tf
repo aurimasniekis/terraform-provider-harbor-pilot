@@ -65,11 +65,11 @@ resource "harborpilot_provider_account" "subscription" {
 resource "harborpilot_provider_account" "api" {
   name = "${var.prefix}-anthropic-key"
   spec = jsonencode({
-    provider_id       = harborpilot_provider.anthropic.id
-    billing           = "metered_api"
-    credential_ref    = "env:ANTHROPIC_API_KEY"
+    provider_id         = harborpilot_provider.anthropic.id
+    billing             = "metered_api"
+    credential_ref      = "env:ANTHROPIC_API_KEY"
     requests_per_minute = 120
-    enabled           = true
+    enabled             = true
   })
 }
 

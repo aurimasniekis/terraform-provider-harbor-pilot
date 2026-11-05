@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15.0
+      - run: go test -count=1 ./...
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Docs are current
+        run: make docs-check
+      - name: Examples are formatted
+        run: terraform fmt -check -recursive examples
+
+  acceptance:
+    runs-on: ubuntu-24.04
+    needs: unit
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform: ["1.10.*", "1.11.*", "1.14.*", "1.17.*"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: terraform-provider-harbor-pilot
+      - uses: actions/checkout@v4
+        with:
+          repository: aurimasniekis/go-harbor-pilot
+          path: go-harbor-pilot
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: terraform-provider-harbor-pilot/go.mod
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ matrix.terraform }}
+          terraform_wrapper: false
+      - name: Acceptance tests
+        working-directory: terraform-provider-harbor-pilot
+        env:
+          TF_ACC: "1"
+        run: go test -count=1 -timeout 30m ./...

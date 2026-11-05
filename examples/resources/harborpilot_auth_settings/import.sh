@@ -1,0 +1,1 @@
+terraform import harborpilot_auth_settings.this auth_settings

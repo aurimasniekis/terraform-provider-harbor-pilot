@@ -186,7 +186,7 @@ func (c *Client) Do(ctx context.Context, method, path string, in, out any, ifMat
 	var lastErr error
 	for i := 0; i < attempts; i++ {
 		if i > 0 {
-			d := time.Duration(200*(1<<(i-1)))*time.Millisecond + time.Duration(rand.IntN(100))*time.Millisecond
+			d := time.Duration(200*(1<<(i-1)))*time.Millisecond + time.Duration(rand.IntN(100))*time.Millisecond //nolint:gosec // retry jitter
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -230,7 +230,7 @@ func (c *Client) once(ctx context.Context, method, path string, body []byte, out
 		// Transport errors never include the token (it is a header).
 		return method == http.MethodGet, fmt.Errorf("%s %s: %w", method, path, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	data, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
 	if err != nil {
 		return method == http.MethodGet, err

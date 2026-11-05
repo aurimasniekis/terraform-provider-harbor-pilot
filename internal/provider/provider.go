@@ -22,8 +22,8 @@ import (
 // Environment variables shared with the harbor-pilot CLI.
 const (
 	EnvServer    = "HP_SERVER"
-	EnvToken     = "HP_API_TOKEN"
-	EnvTokenFile = "HP_API_TOKEN_FILE"
+	EnvToken     = "HP_API_TOKEN"      //nolint:gosec // environment variable name
+	EnvTokenFile = "HP_API_TOKEN_FILE" //nolint:gosec // environment variable name
 )
 
 var (
@@ -103,7 +103,7 @@ func (p *hpProvider) Configure(ctx context.Context, req provider.ConfigureReques
 		tokenFile = os.Getenv(EnvTokenFile)
 	}
 	if token == "" && tokenFile != "" {
-		b, err := os.ReadFile(tokenFile)
+		b, err := os.ReadFile(tokenFile) //nolint:gosec // operator-chosen token file
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(path.Root("token_file"), "Cannot read the token file", err.Error())
 			return
