@@ -13,7 +13,7 @@ Harbor Pilot is a self-hosted LLM gateway and policy control plane. This provide
 - Harbor Pilot with the control-plane API. The provider is tested against the server built from the same release line.
 - Terraform 1.0 or later for most resources.
   - Write-only arguments (`secrets_wo`, `client_secret_wo`) need Terraform 1.11 or later.
-  - The `harborpilot_gateway_token` ephemeral resource needs Terraform 1.10 or later.
+  - The `harborpilot_gateway_token` and `harborpilot_service_principal_token` ephemeral resources need Terraform 1.10 or later.
 
 ## Authentication
 
@@ -71,7 +71,7 @@ Terraform's `sensitive` flag does not keep a value out of state. This provider t
 
 - **Secret references (preferred).** Spec fields such as `credential_ref`, `api_key_ref`, `secret_ref` and `creds_ref` name an environment variable (`env:NAME`) or a file (`file:/path`). The server resolves them, so the secret never passes through Terraform.
 - **Write-only arguments (Terraform 1.11+).** `secrets_wo` and `client_secret_wo` are sent to the server but never stored in plan or state. They are sent on create, and again whenever the matching `*_wo_version` number changes. Terraform cannot detect changes to write-only values, so bump the version to rotate a secret.
-- **Gateway and API tokens.** `harborpilot_gateway_credential` and `harborpilot_api_token` do not keep the issued token in state unless you set `store_token_in_state = true`. To hand a token to another tool during a run without storing it, use the `harborpilot_gateway_token` ephemeral resource.
+- **Gateway and API tokens.** `harborpilot_gateway_credential` and `harborpilot_api_token` do not keep the issued token in state unless you set `store_token_in_state = true`. To hand a token to another tool without storing it, use the `harborpilot_gateway_token` or `harborpilot_service_principal_token` ephemeral resource; set `revoke_on_close = false` when that tool keeps the token after the run.
 - **Data sources** never return secret values. They return only the names of the secrets that are set.
 
 ## State upgrades

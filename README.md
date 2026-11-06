@@ -78,8 +78,15 @@ Each resource is one Harbor Pilot object. The middle column is the name the web 
 | `harborpilot_service_principal`, `harborpilot_api_token` | API tokens (automation accounts) | `/service-principals` |
 | `harborpilot_auth_settings`, `harborpilot_oidc_provider` | Sign-in settings and SSO providers (write-only client secret) | `/auth/settings`, `/auth/oidc-providers` |
 
-Ephemeral resource: `harborpilot_gateway_token` issues a short-lived access token for a client while Terraform runs
-and revokes it when the run ends (Terraform 1.10 or later).
+Ephemeral resources (Terraform 1.10 or later) issue tokens while Terraform runs without storing them in state:
+
+| Ephemeral resource | Issues | API |
+|---|---|---|
+| `harborpilot_gateway_token` | An access token for a client, including a parent token with `tokens:mint` | `/client-bindings/{id}/credentials` |
+| `harborpilot_service_principal_token` | An API token (`hpa_…`) carrying a service principal's permissions | `/service-principals/{id}/tokens` |
+
+Both revoke the token when the run ends. With `revoke_on_close = false` the token stays valid until `ttl_seconds`
+passes, so another tool (for example an orchestrator's own provider, through a write-only argument) can keep it.
 
 Data sources: one per object kind above, looked up by name or id, plus `harborpilot_quota_adapters` and
 `harborpilot_event_catalog`.
@@ -110,11 +117,11 @@ acceptance tests:
 4. Privacy with 3-day captured content.
 5. Availability-first passthrough.
 6. Pulse events and alert routing.
-7. SpaceMan integration with run-scoped tokens.
+7. SpaceMan integration with run-scoped tokens and no Harbor Pilot token in state.
 
 ## Requirements
 
-- Terraform 1.0 or later; write-only secrets need 1.11 and the ephemeral token needs 1.10.
+- Terraform 1.0 or later; write-only secrets need 1.11 and the ephemeral tokens need 1.10.
 - A Harbor Pilot server and an API token.
 - Go 1.27 to build.
 
