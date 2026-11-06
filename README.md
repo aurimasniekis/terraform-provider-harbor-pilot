@@ -11,13 +11,13 @@
 </p>
 
 <p align="center">
+  <a href="https://registry.terraform.io/providers/aurimasniekis/harbor-pilot/latest">Terraform Registry</a> ·
   <a href="https://aurimasniekis.github.io/go-harbor-pilot/operators/terraform">Guide</a> ·
   <a href="docs/index.md">Reference</a> ·
   <a href="examples/scenarios">Examples</a>
 </p>
 
-> **Pre-release.** Not published to the Terraform Registry yet: build it locally and use `dev_overrides` (see
-> [Development](#development)). Go module `github.com/aurimasniekis/terraform-provider-harbor-pilot`, built on the
+> **0.1.0 is the first release**, alongside Harbor Pilot 0.1.0: use provider 0.1 with Harbor Pilot 0.1. Built on the
 > HashiCorp [terraform-plugin-framework](https://developer.hashicorp.com/terraform/plugin/framework).
 
 ## Quick start
@@ -25,7 +25,10 @@
 ```hcl
 terraform {
   required_providers {
-    harborpilot = { source = "aurimasniekis/harbor-pilot" }
+    harborpilot = {
+      source  = "aurimasniekis/harbor-pilot"
+      version = "~> 0.1"
+    }
   }
 }
 
@@ -131,7 +134,7 @@ The acceptance tests build and start Harbor Pilot from a checkout of the applica
 - `HP_APP_BIN`: a prebuilt server binary instead.
 - `TF_ACC_TERRAFORM_PATH`: a specific Terraform binary; otherwise the latest 1.x is downloaded.
 
-To use a local build from Terraform:
+To use a local build instead of the Registry release:
 
 ```hcl
 # ~/.terraformrc
