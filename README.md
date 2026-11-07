@@ -17,8 +17,8 @@
   <a href="examples/scenarios">Examples</a>
 </p>
 
-> **0.1.0 is the first release**, alongside Harbor Pilot 0.1.0: use provider 0.1 with Harbor Pilot 0.1. Built on the
-> HashiCorp [terraform-plugin-framework](https://developer.hashicorp.com/terraform/plugin/framework).
+> **0.1.1 is the latest release**: use it with Harbor Pilot 0.1.1 or later. See the [changelog](CHANGELOG.md). Built on
+> the HashiCorp [terraform-plugin-framework](https://developer.hashicorp.com/terraform/plugin/framework).
 
 ## Quick start
 

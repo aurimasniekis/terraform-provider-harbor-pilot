@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 (2026-11-07)
+
+For Harbor Pilot 0.1.1 or later.
+
+**Breaking for scenario 07 users:** the scenario's `spaceman_parent_token` and `spaceman_gateway_base_urls` outputs are removed. Pass the parent token to the orchestrator's write-only argument from `ephemeral.harborpilot_gateway_token.spaceman_parent.token` instead (the API token likewise from `ephemeral.harborpilot_service_principal_token.spaceman.token`), and use the new `project_ids` output for the space projects.
+
+**Trade-off of `revoke_on_close = false`:** Terraform opens an ephemeral resource on every plan and apply, so each run issues a new token, and with `revoke_on_close = false` the earlier tokens stay valid until `ttl_seconds` passes. Pick a TTL that matches how often you rotate.
 
 - New ephemeral resource `harborpilot_service_principal_token`: issues a service principal API token (`hpa_…`) during a run without storing it in state. The token carries the principal's permissions (for example `usage.read` for `GET /api/v1/budgets/status`).
 - `harborpilot_gateway_token`: new `revoke_on_close` argument (default `true`). With `false` the token stays valid until `ttl_seconds`, so it can serve as a parent token with `tokens:mint`. `ttl_seconds` now accepts up to 63072000 (two years) instead of 86400.
