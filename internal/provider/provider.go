@@ -160,5 +160,5 @@ func (p *hpProvider) DataSources(context.Context) []func() datasource.DataSource
 }
 
 func (p *hpProvider) EphemeralResources(context.Context) []func() ephemeral.EphemeralResource {
-	return []func() ephemeral.EphemeralResource{newGatewayTokenEphemeral}
+	return []func() ephemeral.EphemeralResource{newGatewayTokenEphemeral, newServicePrincipalTokenEphemeral}
 }

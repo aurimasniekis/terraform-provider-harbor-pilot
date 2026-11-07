@@ -64,7 +64,8 @@ The server's `drift_state` is exposed as a computed attribute. After an import, 
 - **References first.** Spec fields such as `credential_ref` and `api_key_ref` carry `env:` or `file:` references that the server resolves.
 - **Stored secrets use write-only arguments.** These are `secrets_wo` and `client_secret_wo`, and they require Terraform 1.11. The value is sent on create and whenever `*_wo_version` changes. It never appears in plan or state.
 - **Issued tokens are opt-in.** `harborpilot_gateway_credential` and `harborpilot_api_token` keep the token in state only with `store_token_in_state = true`.
-- **Ephemeral tokens.** `harborpilot_gateway_token` requires Terraform 1.10. It issues a short-lived token per run and revokes it when Terraform closes it.
+- **Ephemeral tokens.** `harborpilot_gateway_token` and `harborpilot_service_principal_token` require Terraform 1.10. They issue a token per run and revoke it when Terraform closes it.
+- **Kept ephemeral tokens.** With `revoke_on_close = false` the token outlives the run until `ttl_seconds` (at most two years, the server's limit). This hands a long-lived token, such as a parent gateway token with `tokens:mint`, to another provider's write-only argument without putting it in state. Terraform opens ephemeral resources on every plan and apply, so each run issues a new token and earlier ones stay valid until they expire; the TTL bounds how many are live.
 - **Data sources** expose only secret names.
 
 ## TD-7 Routing plan versions
@@ -122,7 +123,8 @@ For every generic kind, the tests cover:
 Further tests cover:
 - gateway credentials: token handling, import, and recreation after revocation;
 - write-only secret rotation;
-- the ephemeral token, which is checked to be revoked after the run;
+- the ephemeral tokens, checked to be revoked after the run, or kept with `revoke_on_close = false`;
+- that no scenario keeps a Harbor Pilot token in state (scenario 07 also checks its kept parent and API tokens);
 - service principals and API tokens;
 - authentication settings and SSO providers.
 

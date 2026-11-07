@@ -3,17 +3,22 @@ package provider
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
+
+	"github.com/aurimasniekis/terraform-provider-harbor-pilot/internal/client"
 )
 
 // testVariables keep scenarios from reaching external services: quota
@@ -21,6 +26,87 @@ import (
 var testVariables = map[string]string{
 	"enable_quota_polling": "false",
 	"enable_delivery":      "false",
+}
+
+// scenarioChecks are extra checks for one scenario after apply.
+var scenarioChecks = map[string]func(t *testing.T, outs map[string]tfexec.OutputMeta){
+	"07-spaceman-integration": checkSpaceManScenario,
+}
+
+// checkSpaceManScenario checks that scenario 07 outputs one project per
+// space and that its ephemeral tokens were issued and outlive the run
+// (revoke_on_close = false) although they are not in state.
+func checkSpaceManScenario(t *testing.T, outs map[string]tfexec.OutputMeta) {
+	t.Helper()
+	str := func(name string) string {
+		var v string
+		if err := json.Unmarshal(outs[name].Value, &v); err != nil || v == "" {
+			t.Fatalf("output %s: %q (%v)", name, outs[name].Value, err)
+		}
+		return v
+	}
+	var projects map[string]string
+	if err := json.Unmarshal(outs["project_ids"].Value, &projects); err != nil {
+		t.Fatalf("output project_ids: %v", err)
+	}
+	if len(projects) != 2 || projects["payments"] == "" || projects["platform"] == "" {
+		t.Fatalf("project_ids = %v, want one project per space", projects)
+	}
+	ctx := context.Background()
+	binding, err := srv.Client.GetObject(ctx, "client-bindings", str("spaceman_binding_id"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var spec struct {
+		AllowedProjectIDs []string          `json:"allowed_project_ids"`
+		ExternalRefs      map[string]string `json:"external_refs"`
+	}
+	if err := json.Unmarshal(binding.Spec, &spec); err != nil {
+		t.Fatal(err)
+	}
+	for space, id := range projects {
+		if !slices.Contains(spec.AllowedProjectIDs, id) {
+			t.Errorf("binding does not allow the %s project", space)
+		}
+	}
+	if len(spec.ExternalRefs) != 1 || spec.ExternalRefs["spaceman.fleet"] == "" {
+		t.Errorf("binding external_refs = %v, want only spaceman.fleet", spec.ExternalRefs)
+	}
+	creds, err := srv.Client.ListGatewayCredentials(ctx, binding.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var parent *client.Credential
+	for i, c := range creds {
+		if c.Name == "spaceman-parent" && c.RevokedAt == nil {
+			parent = &creds[i]
+		}
+	}
+	if parent == nil {
+		t.Fatalf("no active spaceman-parent gateway token was issued: %+v", creds)
+	}
+	if !slices.Contains(parent.Scopes, "tokens:mint") {
+		t.Errorf("parent scopes = %v, want tokens:mint", parent.Scopes)
+	}
+	if len(parent.BoundRefs) != 1 || parent.BoundRefs["spaceman.fleet"] != "prod" {
+		t.Errorf("parent bound_refs = %v, want only spaceman.fleet", parent.BoundRefs)
+	}
+	if parent.ExpiresAt == nil || time.Until(*parent.ExpiresAt) < 29*24*time.Hour {
+		t.Errorf("parent expires_at = %v, want about 30 days", parent.ExpiresAt)
+	}
+	tokens, err := srv.Client.ListAPITokens(ctx, str("spaceman_service_principal_id"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	active := 0
+	for _, tok := range tokens {
+		if tok.Name == "spaceman-orchestrator" && tok.RevokedAt == nil {
+			active++
+		}
+	}
+	if active == 0 {
+		t.Fatalf("no active spaceman-orchestrator API token was issued: %+v", tokens)
+	}
 }
 
 func terraformBinary(t *testing.T) string {
@@ -137,6 +223,23 @@ func TestAccScenarioL(t *testing.T) {
 				t.Fatalf("apply created too few resources: %+v", st.Values)
 			}
 			t.Logf("applied %d resources", len(st.Values.RootModule.Resources))
+			// No scenario keeps a Harbor Pilot token (hpk_ gateway, hpa_ API) in state.
+			raw, err := ex.StatePull(ctx)
+			if err != nil {
+				t.Fatalf("state pull: %v", err)
+			}
+			for _, kind := range []string{"hpk_", "hpa_"} {
+				if strings.Contains(raw, kind) {
+					t.Fatalf("state contains a %s token", kind)
+				}
+			}
+			if check, ok := scenarioChecks[filepath.Base(dir)]; ok {
+				outs, err := ex.Output(ctx)
+				if err != nil {
+					t.Fatalf("output: %v", err)
+				}
+				check(t, outs)
+			}
 			changed, err := ex.Plan(ctx, planOpts...)
 			if err != nil {
 				t.Fatalf("plan: %v\n%s", err, stderr.String())
