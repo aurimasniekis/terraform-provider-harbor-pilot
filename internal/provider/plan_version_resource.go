@@ -62,7 +62,8 @@ func (r *planVersionResource) Schema(_ context.Context, _ resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"document": schema.StringAttribute{Required: true, CustomType: jsontypes.NormalizedType{},
 				MarkdownDescription: "The plan document as JSON (`PlanDocument` in the API reference), usually written with `jsonencode`. " +
-					"Omitted list fields are sent empty: list `fallback.steps` explicitly. `fallback.max_attempts` is required.",
+					"Omitted properties get the server's defaults: an omitted `fallback.steps` means the default fallback " +
+					"(`alternate_account`, `alternate_model`, `stop`), `[]` means no fallback, and an omitted or `0` `fallback.max_attempts` means 3.",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"note": schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString(""),
 				MarkdownDescription: "Change note recorded with the version.",

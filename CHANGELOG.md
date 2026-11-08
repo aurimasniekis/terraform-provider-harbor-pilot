@@ -3,7 +3,9 @@
 ## Unreleased
 
 - Supports one-time budgets (requires Harbor Pilot ≥ 0.1.4): `harborpilot_budget` accepts `period = "once"` with optional `starts_at` and `ends_at`. An older server rejects `period = "once"` with a 422. See the resource page for how replacement, **Start over** and `timezone` behave.
-- The vendored OpenAPI document is now the Harbor Pilot 0.1.4 release. Spec properties the API marks optional are no longer sent as explicit zero values; the server reads a missing property as its zero value, so existing configurations plan no changes.
+- Re-vendored the OpenAPI document from Harbor Pilot 0.1.4; optional fields are no longer sent as zero values. The earlier copy listed many spec properties as required (for example a workspace's `description` or a pool member's `weight`), so the provider filled them with zero values; it now leaves them out and the server applies its documented default. For most properties that default is the zero value, so those configurations plan no changes.
+
+**Behaviour change:** in a `harborpilot_routing_plan_version` document, an omitted `fallback.steps` now gets the server's default fallback (`alternate_account`, `alternate_model`, `stop`) instead of no fallback, and an omitted or `0` `fallback.max_attempts` becomes 3. For no fallback, write `fallback = { steps = [] }`. Only new plan versions are affected: published versions are immutable, and the next change to `document` publishes a new one.
 
 ## 0.1.1 (2026-11-07)
 
