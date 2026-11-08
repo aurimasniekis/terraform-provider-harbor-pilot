@@ -159,6 +159,19 @@ resource "harborpilot_budget" "budget" {
   })
 }
 
+resource "harborpilot_budget" "once" {
+  name = "${local.p}-trial-credit"
+  spec = jsonencode({
+    scope    = "project"
+    scope_id = harborpilot_project.p.id
+    period   = "once"
+    limit    = "10"
+    currency = "USD"
+    ends_at  = "2099-01-01T00:00:00Z"
+    enabled  = true
+  })
+}
+
 resource "harborpilot_event_destination" "hook" {
   name = "${local.p}-hook"
   spec = jsonencode({
@@ -210,6 +223,7 @@ var allKindAddrs = []struct{ addr, plural string }{
 	{"harborpilot_client_binding.b", "client-bindings"},
 	{"harborpilot_quota_monitor.q", "quota-monitors"},
 	{"harborpilot_budget.budget", "budgets"},
+	{"harborpilot_budget.once", "budgets"},
 	{"harborpilot_event_destination.hook", "event-destinations"},
 	{"harborpilot_notification_channel.ch", "notification-channels"},
 	{"harborpilot_notification_rule.rule", "notification-rules"},
@@ -230,6 +244,25 @@ func checkAllDestroyed(s *terraform.State) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+// checkImportedOnceBudget verifies that an imported one-time budget keeps
+// its period and window.
+func checkImportedOnceBudget(states []*terraform.InstanceState) error {
+	if len(states) != 1 {
+		return fmt.Errorf("imported %d instances, want 1", len(states))
+	}
+	var spec map[string]any
+	if err := json.Unmarshal([]byte(states[0].Attributes["spec"]), &spec); err != nil {
+		return err
+	}
+	if spec["period"] != "once" || spec["ends_at"] != "2099-01-01T00:00:00Z" || spec["limit"] != "10" {
+		return fmt.Errorf("imported spec %v", spec)
+	}
+	if v, ok := spec["starts_at"]; ok && v != "" {
+		return fmt.Errorf("imported starts_at = %v, want empty (from creation)", v)
 	}
 	return nil
 }
@@ -274,6 +307,7 @@ func TestAccObjectKinds(t *testing.T) {
 					knownvalue.SetExact([]knownvalue.Check{knownvalue.StringExact("signing_secret")})),
 				statecheck.ExpectKnownValue("harborpilot_event_destination.hook", tfjsonpath.New("secrets_wo"), knownvalue.Null()),
 				statecheck.ExpectKnownValue("harborpilot_routing_plan_version.v", tfjsonpath.New("status"), knownvalue.StringExact("published")),
+				statecheck.ExpectKnownValue("harborpilot_budget.once", tfjsonpath.New("drift_state"), knownvalue.StringExact("in_sync")),
 				statecheck.ExpectKnownValue("data.harborpilot_workspace.by_name", tfjsonpath.New("spec"),
 					knownvalue.StringExact(`{"description":"","display_name":"Workspace one"}`)),
 			},
@@ -377,13 +411,17 @@ func TestAccObjectKinds(t *testing.T) {
 		if k.addr == "harborpilot_event_destination.hook" {
 			ignore = append(ignore, "secrets_wo", "secrets_wo_version")
 		}
-		steps = append(steps, resource.TestStep{
+		step := resource.TestStep{
 			Config:                  allKindsConfig("acc", "two"),
 			ResourceName:            k.addr,
 			ImportState:             true,
 			ImportStateVerify:       true,
 			ImportStateVerifyIgnore: ignore,
-		})
+		}
+		if k.addr == "harborpilot_budget.once" {
+			step.ImportStateCheck = checkImportedOnceBudget
+		}
+		steps = append(steps, step)
 	}
 	// Import by name works too.
 	steps = append(steps, resource.TestStep{

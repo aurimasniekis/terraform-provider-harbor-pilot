@@ -38,7 +38,7 @@ resource "harborpilot_client_binding" "claude_code" {
 ### Required
 
 - `name` (String) Unique name (lowercase letters, digits, `.`, `_`, `-`).
-- `spec` (String) The client binding specification as JSON, usually written with `jsonencode({...})`. See the `BindingSpec` schema in the Harbor Pilot API reference. Properties you leave out are sent as their zero value (empty string, list or map, `0`, `false`), except `enabled`, which must be set.
+- `spec` (String) The client binding specification as JSON, usually written with `jsonencode({...})`. See the `BindingSpec` schema in the Harbor Pilot API reference. Properties you leave out take their zero value (empty string, list or map, `0`, `false`), except `enabled`, which must be set.
 
 ### Read-Only
 

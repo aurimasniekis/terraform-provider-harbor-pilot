@@ -93,7 +93,7 @@ func (r *objectResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			Validators: []validator.String{stringvalidator.LengthBetween(1, 255)}},
 		"spec": schema.StringAttribute{Required: true, CustomType: jsontypes.NormalizedType{},
 			MarkdownDescription: "The " + r.kind.Title + " specification as JSON, usually written with `jsonencode({...})`. " +
-				"See the `" + r.kind.Schema + "` schema in the Harbor Pilot API reference. Properties you leave out are sent as their zero value " +
+				"See the `" + r.kind.Schema + "` schema in the Harbor Pilot API reference. Properties you leave out take their zero value " +
 				"(empty string, list or map, `0`, `false`), except `enabled`, which must be set."},
 		"revision": schema.Int64Attribute{Computed: true, MarkdownDescription: "Server revision, used for optimistic concurrency."},
 		"managed_by": schema.StringAttribute{Computed: true,

@@ -54,7 +54,7 @@ resource "harborpilot_provider" "local" {
 ### Required
 
 - `name` (String) Unique name (lowercase letters, digits, `.`, `_`, `-`).
-- `spec` (String) The provider specification as JSON, usually written with `jsonencode({...})`. See the `ProviderSpec` schema in the Harbor Pilot API reference. Properties you leave out are sent as their zero value (empty string, list or map, `0`, `false`), except `enabled`, which must be set.
+- `spec` (String) The provider specification as JSON, usually written with `jsonencode({...})`. See the `ProviderSpec` schema in the Harbor Pilot API reference. Properties you leave out take their zero value (empty string, list or map, `0`, `false`), except `enabled`, which must be set.
 
 ### Read-Only
 

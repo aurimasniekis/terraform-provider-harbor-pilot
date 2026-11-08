@@ -40,7 +40,7 @@ var Kinds = []Kind{
 		Secrets: []string{"api_key", "management_key", "access_token", "service_account"},
 		About:   "Polls a provider's quota or balance. Prefer the `*_ref` spec fields over write-only secrets."},
 	{TypeName: "budget", Plural: "budgets", Schema: "BudgetSpec", Title: "budget",
-		About: "A spending limit for a scope and calendar period, enforced in the reservation path."},
+		About: "A spending limit for a scope, per calendar period or one time (never resets), enforced in the reservation path."},
 	{TypeName: "privacy_policy", Plural: "privacy-policies", Schema: "PrivacyPolicySpec", Title: "privacy policy",
 		Secrets: []string{"secret_values"},
 		About:   "Detectors and masking rules applied before requests leave the gateway."},

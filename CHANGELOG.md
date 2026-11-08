@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Supports one-time budgets (requires Harbor Pilot ≥ 0.1.4): `harborpilot_budget` accepts `period = "once"` with optional `starts_at` and `ends_at`. An older server rejects `period = "once"` with a 422. See the resource page for how replacement, **Start over** and `timezone` behave.
+- The vendored OpenAPI document is now the Harbor Pilot 0.1.4 release. Spec properties the API marks optional are no longer sent as explicit zero values; the server reads a missing property as its zero value, so existing configurations plan no changes.
+
 ## 0.1.1 (2026-11-07)
 
 For Harbor Pilot 0.1.1 or later.
