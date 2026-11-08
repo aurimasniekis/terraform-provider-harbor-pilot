@@ -62,6 +62,40 @@ components:
         - purpose
         - password
       type: object
+    AccountCheck:
+      additionalProperties: false
+      properties:
+        account_id:
+          type: string
+        checked_at:
+          format: date-time
+          type: string
+        http_status:
+          format: int64
+          type: integer
+        latency_ms:
+          format: int64
+          type: integer
+        message:
+          description: Plain-language explanation; never contains the credential.
+          type: string
+        status:
+          description: "ok: the provider accepted the credential; rejected: it refused it; unreachable: no answer; not_verified: CLI bridge accounts are confirmed by their first request."
+          enum:
+            - ok
+            - rejected
+            - unreachable
+            - error
+            - no_credential
+            - not_verified
+          type: string
+      required:
+        - account_id
+        - checked_at
+        - status
+        - message
+        - latency_ms
+      type: object
     AccountHealthView:
       additionalProperties: false
       properties:
@@ -162,14 +196,8 @@ components:
           type: integer
       required:
         - provider_id
-        - display_name
-        - credential_ref
         - billing
-        - allowed_models
-        - max_concurrency
-        - requests_per_minute
         - enabled
-        - labels
       type: object
     ActivitySummary:
       additionalProperties: false
@@ -318,11 +346,6 @@ components:
           items:
             type: string
           type: array
-      required:
-        - description
-        - pool_id
-        - alias_id
-        - required_capabilities
       type: object
     AttemptDTO:
       additionalProperties: false
@@ -399,6 +422,46 @@ components:
         - failover_reason
         - tokens
         - unknown_events
+      type: object
+    AttentionItem:
+      additionalProperties: false
+      properties:
+        area:
+          enum:
+            - security
+            - quota
+            - budget
+            - provider
+            - compatibility
+            - delivery
+            - system
+          type: string
+        detail:
+          type: string
+        id:
+          description: Stable key for the condition (for dismiss state in clients).
+          type: string
+        link:
+          description: UI path where the condition can be resolved.
+          type: string
+        severity:
+          enum:
+            - critical
+            - warning
+            - info
+          type: string
+        since:
+          format: date-time
+          type: string
+        title:
+          description: Short plain-language summary.
+          type: string
+      required:
+        - id
+        - severity
+        - area
+        - title
+        - link
       type: object
     AuditEntryDTO:
       additionalProperties: false
@@ -519,10 +582,6 @@ components:
           format: int64
           minimum: 0
           type: integer
-      required:
-        - requests_per_minute
-        - max_concurrency
-        - max_request_bytes
       type: object
     BindingSpec:
       additionalProperties: false
@@ -578,17 +637,7 @@ components:
         trust:
           $ref: "#/components/schemas/BindingTrust"
       required:
-        - display_name
-        - owner_kind
-        - owner_id
         - plan_id
-        - project_id
-        - allowed_project_ids
-        - expected_harness
-        - allowed_models
-        - limits
-        - trust
-        - external_refs
         - enabled
       type: object
     BindingTrust:
@@ -603,10 +652,6 @@ components:
         session_hints:
           description: Use harness session headers to group requests into sessions.
           type: boolean
-      required:
-        - session_hints
-        - project_hints
-        - intent_hints
       type: object
     BoardBody:
       additionalProperties: false
@@ -850,6 +895,9 @@ components:
           type: string
         enabled:
           type: boolean
+        ends_at:
+          description: "One-time budgets only: RFC 3339 time after which the budget no longer applies. Empty = never."
+          type: string
         enforcement:
           description: block rejects new attempts once the limit would be exceeded; warn only emits events.
           enum:
@@ -860,10 +908,12 @@ components:
           description: Decimal amount in currency.
           type: string
         period:
+          description: "How the budget repeats: day, week (Monday start) or month; once never resets."
           enum:
             - day
             - week
             - month
+            - once
           type: string
         scope:
           enum:
@@ -876,8 +926,11 @@ components:
         scope_id:
           description: Id of the workspace, project, client binding or provider account. Empty for global.
           type: string
+        starts_at:
+          description: "One-time budgets only: RFC 3339 time from which spend counts. Empty = when the budget was created. May be in the past (to count earlier spend) or the future. Changing a recurring budget to once with this empty counts all spend since the budget was created."
+          type: string
         timezone:
-          description: IANA timezone for period boundaries. Empty = UTC.
+          description: IANA timezone for period boundaries. Empty = UTC. Must be empty for one-time budgets.
           type: string
         warn_at:
           description: Fraction of the limit that emits a warning event. 0 = 0.8.
@@ -923,8 +976,11 @@ components:
         period:
           type: string
         period_end:
+          description: End of the window (exclusive). Null for a one-time budget without ends_at.
           format: date-time
-          type: string
+          type:
+            - string
+            - "null"
         period_start:
           format: date-time
           type: string
@@ -933,6 +989,10 @@ components:
           type:
             - integer
             - "null"
+        remaining_e10:
+          description: "What is left of the limit: limit - spent - reserved, never below 0."
+          format: int64
+          type: integer
         reserved_e10:
           format: int64
           type: integer
@@ -944,11 +1004,14 @@ components:
           format: int64
           type: integer
         state:
+          description: "scheduled: a one-time budget before starts_at; expired: after ends_at (it no longer applies)."
           enum:
             - ok
             - warning
             - exceeded
             - disabled
+            - scheduled
+            - expired
           type: string
         warn_at:
           format: double
@@ -968,6 +1031,7 @@ components:
         - limit_e10
         - spent_e10
         - reserved_e10
+        - remaining_e10
         - by_kind_e10
         - fraction
         - warn_at
@@ -1271,55 +1335,6 @@ components:
         - status
         - refresh
       type: object
-    Content:
-      additionalProperties: false
-      properties:
-        binding_id:
-          type: string
-        created_at:
-          format: date-time
-          type: string
-        expires_at:
-          format: date-time
-          type: string
-        id:
-          type: string
-        mode:
-          enum:
-            - masked_diagnostic
-            - masked_full
-            - unredacted
-          type: string
-        plan_id:
-          type: string
-        policy_id:
-          type: string
-        request_id:
-          type: string
-        sections:
-          additionalProperties: {}
-          type: object
-        session_id:
-          type: string
-        size_bytes:
-          format: int64
-          type: integer
-        truncated:
-          type: boolean
-      required:
-        - sections
-        - id
-        - request_id
-        - binding_id
-        - session_id
-        - plan_id
-        - policy_id
-        - mode
-        - created_at
-        - expires_at
-        - size_bytes
-        - truncated
-      type: object
     Cost:
       additionalProperties: false
       properties:
@@ -1394,6 +1409,10 @@ components:
             - admin
             - operator
             - viewer
+          type: string
+        sso_provider:
+          description: "Pre-provision for single sign-on: the first verified sign-in from this provider (id or slug; pre-provisioned mode) with the account's email links it. Without this, SSO never links an existing account by email."
+          maxLength: 64
           type: string
       required:
         - email
@@ -1698,7 +1717,6 @@ components:
           type: string
       required:
         - document
-        - note
       type: object
     DriftedObject:
       additionalProperties: false
@@ -1819,13 +1837,10 @@ components:
           type: array
       required:
         - account_id
-        - plan_name
         - fee
         - currency
         - period
         - starts_on
-        - ends_on
-        - windows
       type: object
     Envelope:
       additionalProperties: false
@@ -2095,7 +2110,7 @@ components:
           minimum: 1
           type: integer
         steps:
-          description: "Ordered steps: retry, alternate_account, alternate_model, alternate_provider, wait, stop."
+          description: "Ordered steps: retry, alternate_account, alternate_model, alternate_provider, wait, stop. Omit for the default (alternate_account, alternate_model, stop); an empty list means no fallback."
           items:
             type: string
           type: array
@@ -2105,11 +2120,6 @@ components:
           maximum: 600
           minimum: 0
           type: integer
-      required:
-        - steps
-        - max_attempts
-        - allow_paid_fallback
-        - wait_max_seconds
       type: object
     FieldError:
       additionalProperties: false
@@ -2476,10 +2486,16 @@ components:
         snippet:
           description: Excerpt of redacted text.
           type: string
+        snippet_parts:
+          description: The excerpt split into plain and matching runs, in order.
+          items:
+            $ref: "#/components/schemas/SnippetPart"
+          type: array
         truncated:
           type: boolean
       required:
         - snippet
+        - snippet_parts
         - id
         - request_id
         - binding_id
@@ -2804,12 +2820,22 @@ components:
       properties:
         items:
           items:
-            $ref: "#/components/schemas/LoginView"
+            $ref: "#/components/schemas/AccountCheck"
           type: array
       required:
         - items
       type: object
     ListOutBody2:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/LoginView"
+          type: array
+      required:
+        - items
+      type: object
+    ListOutBody3:
       additionalProperties: false
       properties:
         dropped:
@@ -3000,7 +3026,6 @@ components:
       required:
         - match
         - alias_id
-        - note
       type: object
     ModelPricing:
       additionalProperties: false
@@ -3024,9 +3049,6 @@ components:
         - currency
         - input_per_mtok
         - output_per_mtok
-        - cache_read_per_mtok
-        - cache_write_per_mtok
-        - price_version
       type: object
     ModelSpec:
       additionalProperties: false
@@ -3053,10 +3075,6 @@ components:
           description: List prices for estimates; omit when unknown.
       required:
         - id
-        - display_name
-        - context_window
-        - max_output_tokens
-        - capabilities
       type: object
     MonitorView:
       additionalProperties: false
@@ -3420,6 +3438,16 @@ components:
       required:
         - queued
       type: object
+    OutBody:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/AttentionItem"
+          type: array
+      required:
+        - items
+      type: object
     OvInBody:
       additionalProperties: false
       properties:
@@ -3501,19 +3529,6 @@ components:
         items:
           items:
             $ref: "#/components/schemas/ObservedSession"
-          type: array
-        next_cursor:
-          description: Present when more items are available.
-          type: string
-      required:
-        - items
-      type: object
-    PageRequestSummary:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: "#/components/schemas/RequestSummary"
           type: array
         next_cursor:
           description: Present when more items are available.
@@ -3795,6 +3810,10 @@ components:
             - operator
             - viewer
           type: string
+        sso_provider:
+          description: Mark the account for linking on the next verified sign-in from this provider (id or slug); empty clears the mark.
+          maxLength: 64
+          type: string
       type: object
     PlanCompat:
       additionalProperties: false
@@ -3844,12 +3863,6 @@ components:
         schema_version:
           format: int64
           type: integer
-      required:
-        - schema_version
-        - model_mappings
-        - default_alias_id
-        - restrictions
-        - fallback
       type: object
     PlanEffect:
       additionalProperties: false
@@ -3939,12 +3952,6 @@ components:
           items:
             type: string
           type: array
-      required:
-        - allowed_provider_ids
-        - denied_provider_ids
-        - allowed_billing
-        - allowed_classifications
-        - required_capabilities
       type: object
     PlanSpec:
       additionalProperties: false
@@ -3955,9 +3962,6 @@ components:
         display_name:
           maxLength: 120
           type: string
-      required:
-        - display_name
-        - description
       type: object
     Point:
       additionalProperties: false
@@ -4054,8 +4058,6 @@ components:
       required:
         - account_id
         - model
-        - priority
-        - weight
       type: object
     PoolSpec:
       additionalProperties: false
@@ -4085,9 +4087,6 @@ components:
             - ""
           type: string
       required:
-        - display_name
-        - strategy
-        - affinity
         - members
       type: object
     PrivacyAllowRule:
@@ -4205,6 +4204,17 @@ components:
         - breaker
         - result
       type: object
+    ProfileInBody:
+      additionalProperties: false
+      properties:
+        display_name:
+          description: How your name appears to others.
+          maxLength: 120
+          minLength: 1
+          type: string
+      required:
+        - display_name
+      type: object
     ProjectSpec:
       additionalProperties: false
       properties:
@@ -4224,9 +4234,6 @@ components:
           type: string
       required:
         - workspace_id
-        - display_name
-        - description
-        - external_refs
       type: object
     ProviderSpec:
       additionalProperties: false
@@ -4282,14 +4289,6 @@ components:
           type: string
       required:
         - type
-        - display_name
-        - base_url
-        - allow_private_network
-        - classification
-        - headers
-        - request_timeout_seconds
-        - stream_idle_timeout_seconds
-        - models
       type: object
     QuietHours:
       additionalProperties: false
@@ -4398,6 +4397,9 @@ components:
         adapter:
           description: Quota adapter id; see GET /api/v1/quota/adapters.
           type: string
+        allow_private_network:
+          description: Permit private or loopback endpoints for this monitor. Cloud metadata addresses stay blocked.
+          type: boolean
         api_key_ref:
           type: string
         enabled:
@@ -4452,6 +4454,24 @@ components:
         - unit
         - source
         - confidence
+      type: object
+    ReauthRequest:
+      additionalProperties: false
+      properties:
+        password:
+          maxLength: 4096
+          type: string
+      required:
+        - password
+      type: object
+    ReauthResponse:
+      additionalProperties: false
+      properties:
+        auth_at:
+          format: date-time
+          type: string
+      required:
+        - auth_at
       type: object
     RecOutBody:
       additionalProperties: false
@@ -4784,6 +4804,24 @@ components:
         - tokens
         - usage_source
         - tool_calls
+      type: object
+    RequestPage:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RequestSummary"
+          type: array
+        next_cursor:
+          description: Present when more items are available.
+          type: string
+        total:
+          description: Requests matching the filters across all pages.
+          format: int64
+          type: integer
+      required:
+        - total
+        - items
       type: object
     RequestSummary:
       additionalProperties: false
@@ -6119,6 +6157,11 @@ components:
         from:
           format: date-time
           type: string
+        groups:
+          description: "Present with by: one series per group; key \"other\" holds the remaining groups."
+          items:
+            $ref: "#/components/schemas/SeriesGroup"
+          type: array
         points:
           items:
             $ref: "#/components/schemas/UsagePoint"
@@ -6132,6 +6175,20 @@ components:
         - from
         - to
         - step
+        - points
+      type: object
+    SeriesGroup:
+      additionalProperties: false
+      properties:
+        key:
+          description: Group value (id or name); "other" for the remaining groups, "" when unattributed.
+          type: string
+        points:
+          items:
+            $ref: "#/components/schemas/UsagePoint"
+          type: array
+      required:
+        - key
         - points
       type: object
     ServicePrincipalDTO:
@@ -6326,6 +6383,17 @@ components:
         - decision
         - version
       type: object
+    SnippetPart:
+      additionalProperties: false
+      properties:
+        match:
+          type: boolean
+        text:
+          type: string
+      required:
+        - text
+        - match
+      type: object
     SpBody:
       additionalProperties: false
       properties:
@@ -6497,6 +6565,38 @@ components:
         - unmasked_fallback
         - rules
       type: object
+    SummaryFilters:
+      additionalProperties: false
+      properties:
+        binding_id:
+          type: string
+        refs:
+          additionalProperties:
+            type: string
+          description: Trusted-reference filters (ANDed).
+          type: object
+      type: object
+    SystemDTO:
+      additionalProperties: false
+      properties:
+        commit:
+          description: Source revision the binary was built from; empty when unknown.
+          type: string
+        schema_version:
+          description: Latest applied migration of the main database.
+          format: int64
+          type: integer
+        started_at:
+          format: date-time
+          type: string
+        version:
+          type: string
+      required:
+        - version
+        - commit
+        - started_at
+        - schema_version
+      type: object
     TestOutBody:
       additionalProperties: false
       properties:
@@ -6610,6 +6710,59 @@ components:
         - kind
         - stage
         - matched
+      type: object
+    TraceContent:
+      additionalProperties: false
+      properties:
+        allow_export:
+          description: Whether the capture rule allows downloading this trace.
+          type: boolean
+        binding_id:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        expires_at:
+          format: date-time
+          type: string
+        id:
+          type: string
+        mode:
+          enum:
+            - masked_diagnostic
+            - masked_full
+            - unredacted
+          type: string
+        plan_id:
+          type: string
+        policy_id:
+          type: string
+        request_id:
+          type: string
+        sections:
+          additionalProperties: {}
+          type: object
+        session_id:
+          type: string
+        size_bytes:
+          format: int64
+          type: integer
+        truncated:
+          type: boolean
+      required:
+        - allow_export
+        - sections
+        - id
+        - request_id
+        - binding_id
+        - session_id
+        - plan_id
+        - policy_id
+        - mode
+        - created_at
+        - expires_at
+        - size_bytes
+        - truncated
       type: object
     TracePolicySpec:
       additionalProperties: false
@@ -6732,6 +6885,9 @@ components:
           items:
             type: string
           type: array
+        filters:
+          $ref: "#/components/schemas/SummaryFilters"
+          description: Present when a filter was applied.
         from:
           format: date-time
           type: string
@@ -6741,7 +6897,11 @@ components:
           items:
             $ref: "#/components/schemas/UsageGroup"
           type: array
+        next_cursor:
+          description: "With group_by=ref:<key>: present when more groups are available."
+          type: string
         subscription_fees:
+          description: Whole-range fees; filters do not apply to them.
           items:
             $ref: "#/components/schemas/SubscriptionFee"
           type: array
@@ -6749,7 +6909,7 @@ components:
           format: date-time
           type: string
         totals:
-          description: Per category and currency; categories are never summed together.
+          description: Per category and currency over every matching row (all pages); categories are never summed together. subscription_fee is the whole-range fee and ignores filters.
           items:
             $ref: "#/components/schemas/CostAmount"
           type: array
@@ -6831,6 +6991,9 @@ components:
           type: string
         role_source:
           description: local, or oidc:<provider id> when roles come from SSO groups
+          type: string
+        sso_link_provider:
+          description: SSO provider id whose first verified sign-in will link this account.
           type: string
         updated_at:
           format: date-time
@@ -7141,9 +7304,6 @@ components:
         display_name:
           maxLength: 120
           type: string
-      required:
-        - display_name
-        - description
       type: object
     WriteBodyAccountSpec:
       additionalProperties: false
@@ -7484,6 +7644,26 @@ info:
   version: dev
 openapi: 3.1.0
 paths:
+  /account-checks:
+    get:
+      operationId: list-account-checks
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOutBody1"
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Latest connection test of each provider account
+      tags:
+        - Provider accounts
+      x-permission: config.read
   /activity/requests:
     get:
       operationId: list-requests
@@ -7554,12 +7734,51 @@ paths:
           schema:
             maxLength: 32
             type: string
+        - description: RFC 3339; only requests created at or after this time.
+          explode: false
+          in: query
+          name: from
+          schema:
+            description: RFC 3339; only requests created at or after this time.
+            type: string
+        - description: RFC 3339; only requests created before this time.
+          explode: false
+          in: query
+          name: to
+          schema:
+            description: RFC 3339; only requests created before this time.
+            type: string
+        - description: Only requests that needed more than one attempt.
+          explode: false
+          in: query
+          name: fallbacks
+          schema:
+            description: Only requests that needed more than one attempt.
+            type: boolean
+        - description: Request id, or a prefix of the requested or served model.
+          explode: false
+          in: query
+          name: q
+          schema:
+            description: Request id, or a prefix of the requested or served model.
+            maxLength: 200
+            type: string
+        - description: Trusted-reference filter <key>:<value>, split at the first colon. Repeatable (at most 4, ANDed).
+          explode: true
+          in: query
+          name: ref
+          schema:
+            description: Trusted-reference filter <key>:<value>, split at the first colon. Repeatable (at most 4, ANDed).
+            items:
+              type: string
+            maxItems: 4
+            type: array
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageRequestSummary"
+                $ref: "#/components/schemas/RequestPage"
           description: OK
         default:
           content:
@@ -7659,6 +7878,16 @@ paths:
           schema:
             maxLength: 64
             type: string
+        - description: Sessions with a request carrying these trusted references, e.g. session:<value> for a bound session. Same syntax as on /activity/requests.
+          explode: true
+          in: query
+          name: ref
+          schema:
+            description: Sessions with a request carrying these trusted references, e.g. session:<value> for a bound session. Same syntax as on /activity/requests.
+            items:
+              type: string
+            maxItems: 4
+            type: array
       responses:
         "200":
           content:
@@ -7706,6 +7935,27 @@ paths:
       tags:
         - Activity
       x-permission: activity.read
+  /attention:
+    get:
+      description: Failing credentials, used-up quotas and budgets, unavailable CLI bridges, paused protocol paths, failed deliveries and setup gaps, most severe first.
+      operationId: list-attention
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutBody"
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Conditions that need an operator
+      tags:
+        - System
+      x-permission: config.read
   /audit:
     get:
       operationId: list-audit-log
@@ -7763,6 +8013,21 @@ paths:
               - denied
               - error
               - ""
+            type: string
+        - description: RFC 3339; only entries at or after this time.
+          explode: false
+          in: query
+          name: since
+          schema:
+            description: RFC 3339; only entries at or after this time.
+            type: string
+        - description: Text found in the action, actor, target or details.
+          explode: false
+          in: query
+          name: q
+          schema:
+            description: Text found in the action, actor, target or details.
+            maxLength: 200
             type: string
       responses:
         "200":
@@ -8374,7 +8639,45 @@ paths:
       x-permission: config.write
   /budgets/status:
     get:
+      description: "Without filters, every budget. project_id (optionally with binding_id) returns the budgets that cover that scope on the request path, including disabled, scheduled and expired ones: read state. scope and scope_id return budgets defined on exactly that object. The list is bounded by the number of budgets and is not paginated."
       operationId: budget-status
+      parameters:
+        - description: "Budgets covering this project: global, its workspace and the project itself, whatever their state."
+          explode: false
+          in: query
+          name: project_id
+          schema:
+            description: "Budgets covering this project: global, its workspace and the project itself, whatever their state."
+            maxLength: 64
+            type: string
+        - description: "With project_id: also the client binding's budgets, as a mint check_budget for that binding and project counts them."
+          explode: false
+          in: query
+          name: binding_id
+          schema:
+            description: "With project_id: also the client binding's budgets, as a mint check_budget for that binding and project counts them."
+            maxLength: 64
+            type: string
+        - description: Budgets defined on exactly this scope (with scope_id; empty for global).
+          explode: false
+          in: query
+          name: scope
+          schema:
+            description: Budgets defined on exactly this scope (with scope_id; empty for global).
+            enum:
+              - global
+              - workspace
+              - project
+              - binding
+              - account
+              - ""
+            type: string
+        - explode: false
+          in: query
+          name: scope_id
+          schema:
+            maxLength: 64
+            type: string
       responses:
         "200":
           content:
@@ -8388,7 +8691,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
           description: Error
-      summary: Current period spend for every budget
+      summary: Current window spend for every budget
       tags:
         - Budget
       x-permission: usage.read
@@ -8555,6 +8858,59 @@ paths:
       tags:
         - Budgets
       x-permission: config.read
+  /budgets/{id}/reset:
+    post:
+      description: Sets spec.starts_at to the server's current time, truncated to the second (spend recorded earlier in that second still counts), so spend counts again from now and threshold events can fire again. Earlier spend stays in usage reports. Only one-time budgets (period once) can be reset; a budget whose ends_at has passed must be extended or cleared first. On a Terraform-managed budget this shows as drift.
+      operationId: reset-budget
+      parameters:
+        - description: Change source; Terraform sends terraform.
+          in: header
+          name: X-HP-Managed-By
+          schema:
+            description: Change source; Terraform sends terraform.
+            enum:
+              - ui
+              - api
+              - terraform
+              - cli
+              - import
+              - ""
+            type: string
+        - description: Budget id or name.
+          in: path
+          name: id
+          required: true
+          schema:
+            description: Budget id or name.
+            maxLength: 255
+            type: string
+        - description: Current ETag; recommended for all clients.
+          in: header
+          name: If-Match
+          schema:
+            description: Current ETag; recommended for all clients.
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceBudgetSpec"
+          description: OK
+          headers:
+            ETag:
+              schema:
+                type: string
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Start a one-time budget over
+      tags:
+        - Budgets
+      x-permission: config.write
   /client-bindings:
     get:
       operationId: list-client-bindings
@@ -8847,6 +9203,19 @@ paths:
     delete:
       operationId: revoke-gateway-credential
       parameters:
+        - description: Change source; Terraform sends terraform.
+          in: header
+          name: X-HP-Managed-By
+          schema:
+            description: Change source; Terraform sends terraform.
+            enum:
+              - ui
+              - api
+              - terraform
+              - cli
+              - import
+              - ""
+            type: string
         - in: path
           name: id
           required: true
@@ -8872,6 +9241,38 @@ paths:
       tags:
         - Gateway credentials
       x-permission: tokens.manage
+    get:
+      operationId: get-gateway-credential
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            type: string
+        - in: path
+          name: credential_id
+          required: true
+          schema:
+            maxLength: 64
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Credential"
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Get one gateway credential (metadata only)
+      tags:
+        - Gateway credentials
+      x-permission: config.read
   /client-bindings/{id}/history:
     get:
       operationId: history-client_binding
@@ -11575,6 +11976,34 @@ paths:
       tags:
         - Provider accounts
       x-permission: config.read
+  /provider-accounts/{id}/test:
+    post:
+      description: Lists the provider's models with the account's credential (no tokens are spent) and stores the result. CLI bridge accounts report whether a sign-in token is saved and the CLI is installed.
+      operationId: test-provider-account
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 64
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountCheck"
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Test an account's connection and credential
+      tags:
+        - Provider accounts
+      x-permission: config.write
   /providers:
     get:
       operationId: list-providers
@@ -12191,7 +12620,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListOutBody1"
+                $ref: "#/components/schemas/ListOutBody2"
           description: OK
         default:
           content:
@@ -12583,6 +13012,12 @@ paths:
           schema:
             maxLength: 255
             type: string
+        - description: "Publish only if the published version is still this one: \"<version id>\", or \"none\" when nothing is published yet."
+          in: header
+          name: If-Match
+          schema:
+            description: "Publish only if the published version is still this one: \"<version id>\", or \"none\" when nothing is published yet."
+            type: string
       requestBody:
         content:
           application/json:
@@ -12715,6 +13150,19 @@ paths:
     delete:
       operationId: discard-plan-draft
       parameters:
+        - description: Change source; Terraform sends terraform.
+          in: header
+          name: X-HP-Managed-By
+          schema:
+            description: Change source; Terraform sends terraform.
+            enum:
+              - ui
+              - api
+              - terraform
+              - cli
+              - import
+              - ""
+            type: string
         - in: path
           name: id
           required: true
@@ -12851,6 +13299,12 @@ paths:
           required: true
           schema:
             maxLength: 64
+            type: string
+        - description: "Publish only if the published version is still this one: \"<version id>\", or \"none\" when nothing is published yet."
+          in: header
+          name: If-Match
+          schema:
+            description: "Publish only if the published version is still this one: \"<version id>\", or \"none\" when nothing is published yet."
             type: string
       responses:
         "200":
@@ -13411,6 +13865,58 @@ paths:
       tags:
         - Session
       x-permission: session
+  /session/profile:
+    patch:
+      operationId: update-my-profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInBody"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDTO"
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Change my display name
+      tags:
+        - Session
+      x-permission: session
+  /session/reauth:
+    post:
+      operationId: reauthenticate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReauthRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReauthResponse"
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Confirm my password to unlock sensitive actions for 10 minutes
+      tags:
+        - Session
+      x-permission: session
   /stats:
     get:
       operationId: activity-stats
@@ -13719,6 +14225,27 @@ paths:
       tags:
         - Subscription entitlements
       x-permission: config.read
+  /system:
+    get:
+      description: Readable by any principal with config.read, including service-principal tokens. It exposes only the version, commit, start time and the main database's migration number.
+      operationId: get-system
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemDTO"
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Build and schema version of the running server
+      tags:
+        - System
+      x-permission: config.read
   /system/backups:
     get:
       operationId: list-backups
@@ -13762,6 +14289,53 @@ paths:
                 $ref: "#/components/schemas/Error"
           description: Error
       summary: Take an online backup
+      tags:
+        - System
+      x-permission: system.manage
+  /system/backups/{name}:
+    delete:
+      operationId: delete-backup
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            maxLength: 64
+            type: string
+      responses:
+        "204":
+          description: No Content
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Delete a backup from the data directory
+      tags:
+        - System
+      x-permission: system.manage
+  /system/backups/{name}/archive:
+    get:
+      description: The archive holds the manifest and database snapshots exactly as stored; sealed secrets stay encrypted and need the same master key to restore.
+      operationId: download-backup
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            maxLength: 64
+            type: string
+      responses:
+        "200":
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error
+      summary: Download a backup as a .tar.gz archive
       tags:
         - System
       x-permission: system.manage
@@ -14117,7 +14691,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListOutBody2"
+                $ref: "#/components/schemas/ListOutBody3"
           description: OK
         default:
           content:
@@ -14200,7 +14774,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Content"
+                $ref: "#/components/schemas/TraceContent"
           description: OK
         default:
           content:
@@ -14342,6 +14916,7 @@ paths:
             enum:
               - hour
               - day
+              - week
               - ""
             type: string
         - explode: false
@@ -14363,6 +14938,50 @@ paths:
           name: value
           schema:
             maxLength: 200
+            type: string
+        - description: Also split the series by this dimension (top groups by attempts, the rest as other).
+          explode: false
+          in: query
+          name: by
+          schema:
+            description: Also split the series by this dimension (top groups by attempts, the rest as other).
+            enum:
+              - account
+              - provider
+              - model
+              - binding
+              - project
+              - workspace
+              - billing
+              - ""
+            type: string
+        - description: Groups returned with by (default 6).
+          explode: false
+          in: query
+          name: top
+          schema:
+            description: Groups returned with by (default 6).
+            format: int64
+            maximum: 20
+            minimum: 0
+            type: integer
+        - description: Trusted-reference filter <key>:<value>, split at the first colon. Repeatable (at most 4, ANDed). Same rules as usage/summary.
+          explode: true
+          in: query
+          name: ref
+          schema:
+            description: Trusted-reference filter <key>:<value>, split at the first colon. Repeatable (at most 4, ANDed). Same rules as usage/summary.
+            items:
+              type: string
+            maxItems: 4
+            type: array
+        - description: Only usage of this client binding.
+          explode: false
+          in: query
+          name: binding_id
+          schema:
+            description: Only usage of this client binding.
+            maxLength: 64
             type: string
       responses:
         "200":
@@ -14399,20 +15018,50 @@ paths:
           schema:
             description: RFC 3339; default now.
             type: string
-        - explode: false
+        - description: account (default), provider, model, binding, project, workspace, billing, or ref:<key> to group by a trusted reference key (rows without the key form the "" group).
+          explode: false
           in: query
           name: group_by
           schema:
-            enum:
-              - account
-              - provider
-              - model
-              - binding
-              - project
-              - workspace
-              - billing
-              - ""
+            description: account (default), provider, model, binding, project, workspace, billing, or ref:<key> to group by a trusted reference key (rows without the key form the "" group).
+            pattern: ^(account|provider|model|binding|project|workspace|billing|ref:[a-z0-9][a-z0-9._-]{0,63})?$
             type: string
+        - description: Trusted-reference filter <key>:<value>, split at the first colon. Repeatable (at most 4, ANDed).
+          explode: true
+          in: query
+          name: ref
+          schema:
+            description: Trusted-reference filter <key>:<value>, split at the first colon. Repeatable (at most 4, ANDed).
+            items:
+              type: string
+            maxItems: 4
+            type: array
+        - description: Only usage of this client binding.
+          explode: false
+          in: query
+          name: binding_id
+          schema:
+            description: Only usage of this client binding.
+            maxLength: 64
+            type: string
+        - description: "With group_by=ref:<key>: opaque cursor from a previous page's next_cursor. Valid only with the same group_by, ref, binding_id, from and to."
+          explode: false
+          in: query
+          name: cursor
+          schema:
+            description: "With group_by=ref:<key>: opaque cursor from a previous page's next_cursor. Valid only with the same group_by, ref, binding_id, from and to."
+            type: string
+        - description: "With group_by=ref:<key>: maximum groups to return."
+          explode: false
+          in: query
+          name: limit
+          schema:
+            default: 50
+            description: "With group_by=ref:<key>: maximum groups to return."
+            format: int64
+            maximum: 500
+            minimum: 1
+            type: integer
       responses:
         "200":
           content:

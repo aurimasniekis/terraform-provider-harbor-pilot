@@ -41,7 +41,7 @@ resource "harborpilot_routing_plan_version" "default" {
 
 ### Required
 
-- `document` (String) The plan document as JSON (`PlanDocument` in the API reference), usually written with `jsonencode`. Omitted list fields are sent empty: list `fallback.steps` explicitly. `fallback.max_attempts` is required.
+- `document` (String) The plan document as JSON (`PlanDocument` in the API reference), usually written with `jsonencode`. Omitted properties get the server's defaults: an omitted `fallback.steps` means the default fallback (`alternate_account`, `alternate_model`, `stop`), `[]` means no fallback, and an omitted or `0` `fallback.max_attempts` means 3.
 - `plan_id` (String) Routing plan id.
 
 ### Optional

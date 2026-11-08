@@ -3,14 +3,8 @@
   "type": "object",
   "required": [
    "provider_id",
-   "display_name",
-   "credential_ref",
    "billing",
-   "allowed_models",
-   "max_concurrency",
-   "requests_per_minute",
-   "enabled",
-   "labels"
+   "enabled"
   ],
   "props": {
    "allowed_models": {
@@ -56,12 +50,6 @@
  },
  "AliasSpec": {
   "type": "object",
-  "required": [
-   "description",
-   "pool_id",
-   "alias_id",
-   "required_capabilities"
-  ],
   "props": {
    "alias_id": {
     "type": "string"
@@ -83,17 +71,7 @@
  "BindingSpec": {
   "type": "object",
   "required": [
-   "display_name",
-   "owner_kind",
-   "owner_id",
    "plan_id",
-   "project_id",
-   "allowed_project_ids",
-   "expected_harness",
-   "allowed_models",
-   "limits",
-   "trust",
-   "external_refs",
    "enabled"
   ],
   "props": {
@@ -132,11 +110,6 @@
    },
    "limits": {
     "type": "object",
-    "required": [
-     "requests_per_minute",
-     "max_concurrency",
-     "max_request_bytes"
-    ],
     "props": {
      "max_concurrency": {
       "type": "integer",
@@ -172,11 +145,6 @@
    },
    "trust": {
     "type": "object",
-    "required": [
-     "session_hints",
-     "project_hints",
-     "intent_hints"
-    ],
     "props": {
      "intent_hints": {
       "type": "boolean"
@@ -213,6 +181,9 @@
    "enabled": {
     "type": "boolean"
    },
+   "ends_at": {
+    "type": "string"
+   },
    "enforcement": {
     "type": "string",
     "enum": [
@@ -228,7 +199,8 @@
     "enum": [
      "day",
      "week",
-     "month"
+     "month",
+     "once"
     ]
    },
    "scope": {
@@ -242,6 +214,9 @@
     ]
    },
    "scope_id": {
+    "type": "string"
+   },
+   "starts_at": {
     "type": "string"
    },
    "timezone": {
@@ -401,13 +376,10 @@
   "type": "object",
   "required": [
    "account_id",
-   "plan_name",
    "fee",
    "currency",
    "period",
-   "starts_on",
-   "ends_on",
-   "windows"
+   "starts_on"
   ],
   "props": {
    "account_id": {
@@ -529,13 +501,6 @@
  },
  "PlanDocument": {
   "type": "object",
-  "required": [
-   "schema_version",
-   "model_mappings",
-   "default_alias_id",
-   "restrictions",
-   "fallback"
-  ],
   "props": {
    "compatibility": {
     "type": "object",
@@ -575,12 +540,6 @@
    "engine": {},
    "fallback": {
     "type": "object",
-    "required": [
-     "steps",
-     "max_attempts",
-     "allow_paid_fallback",
-     "wait_max_seconds"
-    ],
     "props": {
      "allow_paid_fallback": {
       "type": "boolean"
@@ -640,8 +599,7 @@
      "type": "object",
      "required": [
       "match",
-      "alias_id",
-      "note"
+      "alias_id"
      ],
      "props": {
       "alias_id": {
@@ -669,13 +627,6 @@
    },
    "restrictions": {
     "type": "object",
-    "required": [
-     "allowed_provider_ids",
-     "denied_provider_ids",
-     "allowed_billing",
-     "allowed_classifications",
-     "required_capabilities"
-    ],
     "props": {
      "allowed_billing": {
       "type": "array",
@@ -716,10 +667,6 @@
  },
  "PlanSpec": {
   "type": "object",
-  "required": [
-   "display_name",
-   "description"
-  ],
   "props": {
    "description": {
     "type": "string"
@@ -732,9 +679,6 @@
  "PoolSpec": {
   "type": "object",
   "required": [
-   "display_name",
-   "strategy",
-   "affinity",
    "members"
   ],
   "props": {
@@ -755,9 +699,7 @@
      "type": "object",
      "required": [
       "account_id",
-      "model",
-      "priority",
-      "weight"
+      "model"
      ],
      "props": {
       "account_id": {
@@ -921,10 +863,7 @@
  "ProjectSpec": {
   "type": "object",
   "required": [
-   "workspace_id",
-   "display_name",
-   "description",
-   "external_refs"
+   "workspace_id"
   ],
   "props": {
    "description": {
@@ -945,15 +884,7 @@
  "ProviderSpec": {
   "type": "object",
   "required": [
-   "type",
-   "display_name",
-   "base_url",
-   "allow_private_network",
-   "classification",
-   "headers",
-   "request_timeout_seconds",
-   "stream_idle_timeout_seconds",
-   "models"
+   "type"
   ],
   "props": {
    "allow_private_network": {
@@ -984,11 +915,7 @@
     "items": {
      "type": "object",
      "required": [
-      "id",
-      "display_name",
-      "context_window",
-      "max_output_tokens",
-      "capabilities"
+      "id"
      ],
      "props": {
       "capabilities": {
@@ -1016,10 +943,7 @@
        "required": [
         "currency",
         "input_per_mtok",
-        "output_per_mtok",
-        "cache_read_per_mtok",
-        "cache_write_per_mtok",
-        "price_version"
+        "output_per_mtok"
        ],
        "props": {
         "cache_read_per_mtok": {
@@ -1085,6 +1009,9 @@
    },
    "adapter": {
     "type": "string"
+   },
+   "allow_private_network": {
+    "type": "boolean"
    },
    "api_key_ref": {
     "type": "string"
@@ -1179,10 +1106,6 @@
  },
  "WorkspaceSpec": {
   "type": "object",
-  "required": [
-   "display_name",
-   "description"
-  ],
   "props": {
    "description": {
     "type": "string"

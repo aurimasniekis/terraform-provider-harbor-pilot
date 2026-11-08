@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -88,6 +89,21 @@ resource "harborpilot_pool" "pool" {
   })
 }
 
+# Fields the spec marks optional, left out (weight) or set to their zero
+# value (priority, description): both must converge with an empty plan.
+resource "harborpilot_pool" "pool_zero" {
+  name = "${local.p}-pool-zero"
+  spec = jsonencode({
+    display_name = "Pool zero %[2]s"
+    members      = [{ account_id = harborpilot_provider_account.a.id, model = "model-a", priority = 0 }]
+  })
+}
+
+resource "harborpilot_workspace" "w_zero" {
+  name = "${local.p}-ws-zero"
+  spec = jsonencode({ display_name = "Workspace zero %[2]s", description = "" })
+}
+
 resource "harborpilot_model_alias" "alias" {
   name = "${local.p}/default"
   spec = jsonencode({ pool_id = harborpilot_pool.pool.id, description = "Default %[2]s" })
@@ -159,6 +175,19 @@ resource "harborpilot_budget" "budget" {
   })
 }
 
+resource "harborpilot_budget" "once" {
+  name = "${local.p}-trial-credit"
+  spec = jsonencode({
+    scope    = "project"
+    scope_id = harborpilot_project.p.id
+    period   = "once"
+    limit    = "10"
+    currency = "USD"
+    ends_at  = "2099-01-01T00:00:00Z"
+    enabled  = true
+  })
+}
+
 resource "harborpilot_event_destination" "hook" {
   name = "${local.p}-hook"
   spec = jsonencode({
@@ -203,6 +232,8 @@ var allKindAddrs = []struct{ addr, plural string }{
 	{"harborpilot_provider_account.a", "provider-accounts"},
 	{"harborpilot_subscription_entitlement.e", "subscription-entitlements"},
 	{"harborpilot_pool.pool", "pools"},
+	{"harborpilot_pool.pool_zero", "pools"},
+	{"harborpilot_workspace.w_zero", "workspaces"},
 	{"harborpilot_model_alias.alias", "model-aliases"},
 	{"harborpilot_privacy_policy.priv", "privacy-policies"},
 	{"harborpilot_trace_policy.trace", "trace-policies"},
@@ -210,6 +241,7 @@ var allKindAddrs = []struct{ addr, plural string }{
 	{"harborpilot_client_binding.b", "client-bindings"},
 	{"harborpilot_quota_monitor.q", "quota-monitors"},
 	{"harborpilot_budget.budget", "budgets"},
+	{"harborpilot_budget.once", "budgets"},
 	{"harborpilot_event_destination.hook", "event-destinations"},
 	{"harborpilot_notification_channel.ch", "notification-channels"},
 	{"harborpilot_notification_rule.rule", "notification-rules"},
@@ -230,6 +262,25 @@ func checkAllDestroyed(s *terraform.State) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+// checkImportedOnceBudget verifies that an imported one-time budget keeps
+// its period and window.
+func checkImportedOnceBudget(states []*terraform.InstanceState) error {
+	if len(states) != 1 {
+		return fmt.Errorf("imported %d instances, want 1", len(states))
+	}
+	var spec map[string]any
+	if err := json.Unmarshal([]byte(states[0].Attributes["spec"]), &spec); err != nil {
+		return err
+	}
+	if spec["period"] != "once" || spec["ends_at"] != "2099-01-01T00:00:00Z" || spec["limit"] != "10" {
+		return fmt.Errorf("imported spec %v", spec)
+	}
+	if v, ok := spec["starts_at"]; ok && v != "" {
+		return fmt.Errorf("imported starts_at = %v, want empty (from creation)", v)
 	}
 	return nil
 }
@@ -274,6 +325,7 @@ func TestAccObjectKinds(t *testing.T) {
 					knownvalue.SetExact([]knownvalue.Check{knownvalue.StringExact("signing_secret")})),
 				statecheck.ExpectKnownValue("harborpilot_event_destination.hook", tfjsonpath.New("secrets_wo"), knownvalue.Null()),
 				statecheck.ExpectKnownValue("harborpilot_routing_plan_version.v", tfjsonpath.New("status"), knownvalue.StringExact("published")),
+				statecheck.ExpectKnownValue("harborpilot_budget.once", tfjsonpath.New("drift_state"), knownvalue.StringExact("in_sync")),
 				statecheck.ExpectKnownValue("data.harborpilot_workspace.by_name", tfjsonpath.New("spec"),
 					knownvalue.StringExact(`{"description":"","display_name":"Workspace one"}`)),
 			},
@@ -286,6 +338,8 @@ func TestAccObjectKinds(t *testing.T) {
 				PreApply: []plancheck.PlanCheck{
 					plancheck.ExpectResourceAction("harborpilot_workspace.w", plancheck.ResourceActionUpdate),
 					plancheck.ExpectResourceAction("harborpilot_pool.pool", plancheck.ResourceActionUpdate),
+					plancheck.ExpectResourceAction("harborpilot_pool.pool_zero", plancheck.ResourceActionUpdate),
+					plancheck.ExpectResourceAction("harborpilot_workspace.w_zero", plancheck.ResourceActionUpdate),
 					plancheck.ExpectResourceAction("harborpilot_routing_plan_version.v", plancheck.ResourceActionNoop),
 				},
 				PostApplyPostRefresh: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
@@ -377,13 +431,17 @@ func TestAccObjectKinds(t *testing.T) {
 		if k.addr == "harborpilot_event_destination.hook" {
 			ignore = append(ignore, "secrets_wo", "secrets_wo_version")
 		}
-		steps = append(steps, resource.TestStep{
+		step := resource.TestStep{
 			Config:                  allKindsConfig("acc", "two"),
 			ResourceName:            k.addr,
 			ImportState:             true,
 			ImportStateVerify:       true,
 			ImportStateVerifyIgnore: ignore,
-		})
+		}
+		if k.addr == "harborpilot_budget.once" {
+			step.ImportStateCheck = checkImportedOnceBudget
+		}
+		steps = append(steps, step)
 	}
 	// Import by name works too.
 	steps = append(steps, resource.TestStep{
@@ -409,6 +467,83 @@ func TestAccObjectKinds(t *testing.T) {
 		CheckDestroy:             checkAllDestroyed,
 		Steps:                    steps,
 	})
+}
+
+// TestAccPlanVersionFallbackDefaults covers the server's fallback defaults
+// for a plan version document: an omitted fallback.steps gets the default
+// fallback and an omitted max_attempts 3, while steps = [] means no fallback.
+// Both converge with an empty second plan.
+func TestAccPlanVersionFallbackDefaults(t *testing.T) {
+	config := providerBlock + `
+resource "harborpilot_routing_plan" "fb_default" {
+  name = "acc-fb-default"
+  spec = jsonencode({ display_name = "Fallback default" })
+}
+
+resource "harborpilot_routing_plan_version" "fb_default" {
+  plan_id  = harborpilot_routing_plan.fb_default.id
+  document = jsonencode({ fallback = { allow_paid_fallback = false } })
+}
+
+resource "harborpilot_routing_plan" "fb_none" {
+  name = "acc-fb-none"
+  spec = jsonencode({ display_name = "No fallback" })
+}
+
+resource "harborpilot_routing_plan_version" "fb_none" {
+  plan_id  = harborpilot_routing_plan.fb_none.id
+  document = jsonencode({ fallback = { steps = [], max_attempts = 2 } })
+}
+`
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: protoV6,
+		Steps: []resource.TestStep{{
+			Config: config,
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PostApplyPostRefresh: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+			},
+			Check: resource.ComposeAggregateTestCheckFunc(
+				checkStoredFallback("harborpilot_routing_plan_version.fb_default",
+					[]string{"alternate_account", "alternate_model", "stop"}, 3),
+				checkStoredFallback("harborpilot_routing_plan_version.fb_none", []string{}, 2),
+			),
+		}},
+	})
+}
+
+// checkStoredFallback reads the version's document from the server and
+// compares its fallback steps and max_attempts.
+func checkStoredFallback(addr string, steps []string, maxAttempts int) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs := s.RootModule().Resources[addr]
+		if rs == nil {
+			return fmt.Errorf("%s not in state", addr)
+		}
+		vs, err := srv.Client.ListVersions(context.Background(), rs.Primary.Attributes["plan_id"])
+		if err != nil {
+			return err
+		}
+		for _, v := range vs {
+			if v.ID != rs.Primary.ID {
+				continue
+			}
+			var doc struct {
+				Fallback struct {
+					Steps       []string `json:"steps"`
+					MaxAttempts int      `json:"max_attempts"`
+				} `json:"fallback"`
+			}
+			if err := json.Unmarshal(v.Document, &doc); err != nil {
+				return err
+			}
+			if doc.Fallback.Steps == nil || !slices.Equal(doc.Fallback.Steps, steps) || doc.Fallback.MaxAttempts != maxAttempts {
+				return fmt.Errorf("%s: fallback steps %q max_attempts %d, want %q and %d",
+					addr, doc.Fallback.Steps, doc.Fallback.MaxAttempts, steps, maxAttempts)
+			}
+			return nil
+		}
+		return fmt.Errorf("%s: version %s not found", addr, rs.Primary.ID)
+	}
 }
 
 func TestAccObjectValidationErrors(t *testing.T) {

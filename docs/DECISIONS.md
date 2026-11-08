@@ -51,6 +51,8 @@ Some older server schemas mark every property as required, including optional on
 
 One consequence: an omitted list is sent empty, not "default". The documentation calls this out for `fallback.steps`.
 
+**Amendment (2026-11-08):** from the Harbor Pilot 0.1.4 re-vendor, the vendored schema marks only truly required properties as required. Omitted optional properties are left out of the request and the server's documented defaults apply. For example, an omitted `fallback.steps` in a routing plan version document now means the server's default fallback (`alternate_account`, `alternate_model`, `stop`), and `steps = []` means no fallback. The owner chose to follow the API rather than keep the old zero-fill for this field; the CHANGELOG lists it as a behaviour change.
+
 ## TD-5 Convergence and drift
 The server canonicalizes specs: it adds defaults, sorts lists and changes case. The provider handles this as follows:
 1. After each create or update, the user's `spec` is kept in state exactly as written.
