@@ -34,10 +34,26 @@ func TestFillJSON(t *testing.T) {
 			want:   `{"models":[{"id":"","pricing":{"currency":"","input_per_mtok":"1","output_per_mtok":""}}],"type":"openai_compatible"}`,
 		},
 		{
-			name:   "enum without empty value stays missing",
+			name:   "required strings in array items are filled",
 			schema: "PlanDocument",
 			in:     `{"model_mappings":[{}]}`,
 			want:   `{"model_mappings":[{"alias_id":"","match":""}]}`,
+		},
+		{
+			// unit is an enum without "" and seconds has minimum 60: both
+			// stay missing so the server names them; name is filled.
+			name:   "enum without empty value and positive minimum stay missing",
+			schema: "EntitlementSpec",
+			in:     `{"account_id":"a","fee":"0","currency":"USD","period":"monthly","starts_on":"2026-01-01","windows":[{}]}`,
+			want:   `{"account_id":"a","currency":"USD","fee":"0","period":"monthly","starts_on":"2026-01-01","windows":[{"name":""}]}`,
+		},
+		{
+			// An omitted fallback.steps gets the server's default fallback;
+			// filling it with [] would mean "no fallback".
+			name:   "omitted fallback steps are not filled",
+			schema: "PlanDocument",
+			in:     `{"fallback":{"max_attempts":2}}`,
+			want:   `{"fallback":{"max_attempts":2}}`,
 		},
 		{
 			// period (enum without "") is left for the server to name; the
