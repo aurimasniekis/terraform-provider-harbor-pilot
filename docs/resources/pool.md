@@ -35,7 +35,7 @@ resource "harborpilot_pool" "coding" {
 ### Required
 
 - `name` (String) Unique name (lowercase letters, digits, `.`, `_`, `-`).
-- `spec` (String) The pool specification as JSON, usually written with `jsonencode({...})`. See the `PoolSpec` schema in the Harbor Pilot API reference. Properties you leave out take their zero value (empty string, list or map, `0`, `false`), except `enabled`, which must be set.
+- `spec` (String) The pool specification as JSON, usually written with `jsonencode({...})`. See the `PoolSpec` schema in the Harbor Pilot API reference. Properties you leave out take the server's default, usually their zero value (empty string, list or map, `0`, `false`), except `enabled`, which must be set.
 
 ### Read-Only
 
