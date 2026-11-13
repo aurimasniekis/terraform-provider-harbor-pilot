@@ -13,9 +13,11 @@
 package specschema
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"slices"
 	"sync"
 )
@@ -54,8 +56,8 @@ func Get(name string) *Node {
 // FillJSON parses a JSON object, fills it against the named schema and
 // re-encodes it.
 func FillJSON(schema string, in []byte) ([]byte, error) {
-	var v any
-	if err := json.Unmarshal(in, &v); err != nil {
+	v, err := decode(in)
+	if err != nil {
 		return nil, err
 	}
 	if _, ok := v.(map[string]any); !ok {
@@ -128,12 +130,29 @@ func zero(n *Node) (any, bool) {
 }
 
 // Canonical re-encodes JSON with sorted object keys and no insignificant
-// whitespace, so semantically equal documents compare equal.
+// whitespace, so semantically equal documents compare equal. Numbers keep
+// their exact text.
 func Canonical(in []byte) (string, error) {
-	var v any
-	if err := json.Unmarshal(in, &v); err != nil {
+	v, err := decode(in)
+	if err != nil {
 		return "", err
 	}
 	b, err := json.Marshal(v)
 	return string(b), err
+}
+
+// decode parses one JSON value and keeps numbers as json.Number. Free-form
+// values such as a model's request_fields go to the server as written, so
+// a large integer (a seed, for example) must not be rounded to a float64.
+func decode(in []byte) (any, error) {
+	d := json.NewDecoder(bytes.NewReader(in))
+	d.UseNumber()
+	var v any
+	if err := d.Decode(&v); err != nil {
+		return nil, err
+	}
+	if _, err := d.Token(); err != io.EOF {
+		return nil, fmt.Errorf("invalid JSON: data after the top-level value")
+	}
+	return v, nil
 }

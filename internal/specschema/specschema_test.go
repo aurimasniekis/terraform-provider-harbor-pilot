@@ -71,6 +71,21 @@ func TestFillJSON(t *testing.T) {
 			want:   `{"currency":"USD","enabled":true,"ends_at":"2027-01-01T00:00:00Z","limit":"10","period":"once","scope":"global"}`,
 		},
 		{
+			// D-046 (Harbor Pilot 0.1.6): the three optional model fields are
+			// sent as written. request_fields values are free-form JSON, so
+			// large integers and nested objects pass through unchanged.
+			name:   "model request fields are sent as written",
+			schema: "ProviderSpec",
+			in:     `{"type":"openai_compatible","models":[{"id":"vendor/model-a","provider_routing":{"only":["provider-a"],"allow_fallbacks":false,"max_price":{"prompt":1.5}},"request_fields":{"seed":12345678901234567890,"temperature":0.2,"metadata":{"b":1,"a":[1e3]}},"request_field_policy":"client"}]}`,
+			want:   `{"models":[{"id":"vendor/model-a","provider_routing":{"allow_fallbacks":false,"max_price":{"prompt":1.5},"only":["provider-a"]},"request_field_policy":"client","request_fields":{"metadata":{"a":[1e3],"b":1},"seed":12345678901234567890,"temperature":0.2}}],"type":"openai_compatible"}`,
+		},
+		{
+			name:   "model request fields left out stay out",
+			schema: "ProviderSpec",
+			in:     `{"type":"openai_compatible","models":[{"id":"vendor/model-a"}]}`,
+			want:   `{"models":[{"id":"vendor/model-a"}],"type":"openai_compatible"}`,
+		},
+		{
 			name:   "unknown kinds pass through",
 			schema: "NoSuchSpec",
 			in:     `{"a":1}`,
@@ -127,5 +142,50 @@ func TestBudgetSchemaFromV014(t *testing.T) {
 		if slices.Contains(n.Required, k) {
 			t.Errorf("%s is required", k)
 		}
+	}
+}
+
+func TestCanonicalKeepsNumbers(t *testing.T) {
+	got, err := Canonical([]byte(`{"seed": 12345678901234567890, "t": 0.2}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"seed":12345678901234567890,"t":0.2}`; got != want {
+		t.Fatalf("got %s, want %s", got, want)
+	}
+	if _, err := Canonical([]byte(`{} {}`)); err == nil {
+		t.Fatal("trailing data accepted")
+	}
+}
+
+func TestProviderModelSchemaFromV016(t *testing.T) {
+	n := Get("ProviderSpec")
+	if n == nil || n.Props["models"] == nil || n.Props["models"].Items == nil {
+		t.Fatal("no ProviderSpec models schema")
+	}
+	m := n.Props["models"].Items
+	for _, k := range []string{"provider_routing", "request_fields", "request_field_policy"} {
+		if m.Props[k] == nil {
+			t.Fatalf("model property %s missing", k)
+		}
+		if slices.Contains(m.Required, k) {
+			t.Errorf("%s is required", k)
+		}
+	}
+	if !m.Props["request_fields"].Map {
+		t.Error("request_fields is not a map")
+	}
+	if p := m.Props["request_field_policy"]; !slices.Equal(p.Enum, []string{"configured", "client", "reject", ""}) {
+		t.Errorf("request_field_policy enum = %v", p.Enum)
+	}
+	r := m.Props["provider_routing"]
+	for _, k := range []string{"order", "only", "ignore", "sort", "allow_fallbacks", "require_parameters",
+		"data_collection", "zdr", "quantizations", "max_price"} {
+		if r.Props[k] == nil {
+			t.Errorf("provider_routing.%s missing", k)
+		}
+	}
+	if len(r.Required) != 0 {
+		t.Errorf("provider_routing requires %v", r.Required)
 	}
 }

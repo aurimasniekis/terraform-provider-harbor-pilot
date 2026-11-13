@@ -128,7 +128,8 @@ Further tests cover:
 - the ephemeral tokens, checked to be revoked after the run, or kept with `revoke_on_close = false`;
 - that no scenario keeps a Harbor Pilot token in state (scenario 07 also checks its kept parent and API tokens);
 - service principals and API tokens;
-- authentication settings and SSO providers.
+- authentication settings and SSO providers;
+- a provider model's upstream request fields (Harbor Pilot D-046): round-trip with exact numbers, update, import, drift, clearing when omitted, and the server's 422.
 
 412 conflicts are tested directly against the server with a stale revision, because Terraform refreshes before every apply and cannot produce one on its own.
 
