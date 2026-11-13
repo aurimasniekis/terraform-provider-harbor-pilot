@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Supports per-model upstream request fields (requires Harbor Pilot ≥ 0.1.6, D-046). A provider's `spec.models[]` entries accept `provider_routing`, `request_fields` and `request_field_policy`. They are written in `spec` like any other property, round-trip with an empty second plan, and come back on import. **An omitted field is cleared on apply**, as the API's `PUT` replaces the whole spec. That includes values set only in the UI. The server validates the per-provider-type allowlist, and its 422 is shown with the field path. See the `harborpilot_provider` resource page.
+- Numbers in `spec` and plan version documents are sent and compared with their exact text. Before, they went through a float64, so an integer above 2^53 (for example a `request_fields` `seed`) lost digits.
+- Re-vendored the OpenAPI document from Harbor Pilot 0.1.6.
+
 ## 0.1.2 (2026-11-08)
 
 For Harbor Pilot 0.1.4 or later. One-time budgets need 0.1.4; everything else also works with older Harbor Pilot 0.1 servers.

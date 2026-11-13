@@ -965,6 +965,91 @@
          "type": "string"
         }
        }
+      },
+      "provider_routing": {
+       "type": "object",
+       "props": {
+        "allow_fallbacks": {
+         "type": "boolean"
+        },
+        "data_collection": {
+         "type": "string",
+         "enum": [
+          "allow",
+          "deny",
+          ""
+         ]
+        },
+        "ignore": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "max_price": {
+         "type": "object",
+         "props": {
+          "completion": {
+           "type": "number"
+          },
+          "image": {
+           "type": "number"
+          },
+          "prompt": {
+           "type": "number"
+          },
+          "request": {
+           "type": "number"
+          }
+         }
+        },
+        "only": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "order": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "quantizations": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "require_parameters": {
+         "type": "boolean"
+        },
+        "sort": {
+         "type": "string",
+         "enum": [
+          "price",
+          "throughput",
+          "latency",
+          ""
+         ]
+        },
+        "zdr": {
+         "type": "boolean"
+        }
+       }
+      },
+      "request_field_policy": {
+       "type": "string",
+       "enum": [
+        "configured",
+        "client",
+        "reject",
+        ""
+       ]
+      },
+      "request_fields": {
+       "type": "object",
+       "map": true
       }
      }
     }

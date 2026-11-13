@@ -28,3 +28,25 @@ resource "harborpilot_provider" "local" {
     models                = [{ id = "qwen3-coder", display_name = "Qwen3 Coder", context_window = 131072, max_output_tokens = 16384, capabilities = ["tools", "streaming"] }]
   })
 }
+
+# An OpenAI-compatible router: pin a model to one upstream provider and set
+# extra request fields (Harbor Pilot 0.1.6 or later). Fields left out of a
+# model are cleared on apply.
+resource "harborpilot_provider" "router" {
+  name = "router"
+  spec = jsonencode({
+    type         = "openai_compatible"
+    display_name = "Router"
+    base_url     = "https://router.example.com/v1"
+    models = [{
+      id = "vendor/model-a"
+      provider_routing = {
+        only            = ["provider-a"]
+        allow_fallbacks = false
+        data_collection = "deny"
+      }
+      request_fields       = { temperature = 0.2, transforms = ["middle-out"] }
+      request_field_policy = "configured"
+    }]
+  })
+}
