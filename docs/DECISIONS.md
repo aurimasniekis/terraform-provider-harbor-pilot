@@ -130,6 +130,7 @@ Further tests cover:
 - service principals and API tokens;
 - authentication settings and SSO providers;
 - a provider model's upstream request fields (Harbor Pilot D-046): round-trip with exact numbers, update, import, drift, clearing when omitted, and the server's 422.
+- a provider model's reasoning option (Harbor Pilot D-047): round-trip, the server's normalised form without a diff, update, import, drift, clearing when omitted (no `reasoning` key stored), and the server's 422.
 
 412 conflicts are tested directly against the server with a stale revision, because Terraform refreshes before every apply and cannot produce one on its own.
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Supports a per-model reasoning option (requires Harbor Pilot ≥ 0.1.7, D-047). A provider's `spec.models[]` entries accept `reasoning` (`mode`, `style`, `effort`, `budget_tokens`, `max_budget_tokens`, `efforts`, `history`, `history_field`). It is written in `spec` like any other property, round-trips with an empty second plan (including the server's normalised form) and comes back on import. **An omitted option is cleared on apply**, as the API's `PUT` replaces the whole spec. The server validates it, and its 422 is shown with the field path. See the `harborpilot_provider` resource page.
+- Re-vendored the OpenAPI document from Harbor Pilot 0.1.7.
+
 ## 0.1.3 (2026-11-13)
 
 For Harbor Pilot 0.1.6 or later. Per-model request fields need 0.1.6; everything else also works with older Harbor Pilot 0.1 servers.

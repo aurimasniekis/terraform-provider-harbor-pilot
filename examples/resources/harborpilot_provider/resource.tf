@@ -50,3 +50,24 @@ resource "harborpilot_provider" "router" {
     }]
   })
 }
+
+# A reasoning model behind an OpenAI-compatible router: follow the client's
+# reasoning settings in the router's style, with medium as the default level
+# (Harbor Pilot 0.1.7 or later). An omitted reasoning option is cleared on apply.
+resource "harborpilot_provider" "reasoning_router" {
+  name = "reasoning-router"
+  spec = jsonencode({
+    type         = "openai_compatible"
+    display_name = "Reasoning router"
+    base_url     = "https://router.example.com/v1"
+    models = [{
+      id = "vendor/reasoning-model"
+      reasoning = {
+        mode    = "client"
+        style   = "openrouter_reasoning"
+        effort  = "medium"
+        efforts = ["low", "medium", "high"]
+      }
+    }]
+  })
+}
