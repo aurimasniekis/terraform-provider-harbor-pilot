@@ -86,6 +86,14 @@ func TestFillJSON(t *testing.T) {
 			want:   `{"models":[{"id":"vendor/model-a"}],"type":"openai_compatible"}`,
 		},
 		{
+			// D-047 (Harbor Pilot 0.1.7): the reasoning option has no required
+			// properties, so only the fields written are sent.
+			name:   "model reasoning is sent as written",
+			schema: "ProviderSpec",
+			in:     `{"type":"openai_compatible","models":[{"id":"vendor/model-a","reasoning":{"mode":"client","style":"openrouter_reasoning","effort":"medium","efforts":["low","medium","high"]}}]}`,
+			want:   `{"models":[{"id":"vendor/model-a","reasoning":{"effort":"medium","efforts":["low","medium","high"],"mode":"client","style":"openrouter_reasoning"}}],"type":"openai_compatible"}`,
+		},
+		{
 			name:   "unknown kinds pass through",
 			schema: "NoSuchSpec",
 			in:     `{"a":1}`,
@@ -187,5 +195,31 @@ func TestProviderModelSchemaFromV016(t *testing.T) {
 	}
 	if len(r.Required) != 0 {
 		t.Errorf("provider_routing requires %v", r.Required)
+	}
+}
+
+func TestProviderModelReasoningSchemaFromV017(t *testing.T) {
+	n := Get("ProviderSpec")
+	if n == nil || n.Props["models"] == nil || n.Props["models"].Items == nil {
+		t.Fatal("no ProviderSpec models schema")
+	}
+	m := n.Props["models"].Items
+	r := m.Props["reasoning"]
+	if r == nil {
+		t.Fatal("model property reasoning missing")
+	}
+	if slices.Contains(m.Required, "reasoning") {
+		t.Error("reasoning is required")
+	}
+	for _, k := range []string{"mode", "style", "effort", "budget_tokens", "max_budget_tokens", "efforts", "history", "history_field"} {
+		if r.Props[k] == nil {
+			t.Errorf("reasoning.%s missing", k)
+		}
+	}
+	if len(r.Required) != 0 {
+		t.Errorf("reasoning requires %v", r.Required)
+	}
+	if p := r.Props["mode"]; p == nil || !slices.Equal(p.Enum, []string{"auto", "client", "fixed", "off", ""}) {
+		t.Errorf("reasoning.mode enum = %v", p)
 	}
 }
