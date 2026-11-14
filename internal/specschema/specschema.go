@@ -22,10 +22,26 @@ import (
 	"sync"
 )
 
-//go:generate go run ../../tools/genschema ../../api/openapi.yaml schemas.json
+//go:generate go run ../../tools/genschema ../../api/openapi.yaml schemas.json enums.json
 
 //go:embed schemas.json
 var raw []byte
+
+//go:embed enums.json
+var rawEnums []byte
+
+var enums = sync.OnceValue(func() map[string][]string {
+	var m map[string][]string
+	if err := json.Unmarshal(rawEnums, &m); err != nil {
+		panic(fmt.Sprintf("specschema: %v", err))
+	}
+	return m
+})
+
+// Enum returns a server enum the provider validates (generated from the
+// vendored OpenAPI document): "permissions" (a service principal's),
+// "oidc_role", "oidc_default_role" (includes "") and "oidc_provisioning".
+func Enum(name string) []string { return slices.Clone(enums()[name]) }
 
 // Node is a simplified JSON schema.
 type Node struct {

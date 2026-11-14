@@ -26,7 +26,7 @@ resource "harborpilot_service_principal" "ci" {
 ### Required
 
 - `name` (String) Unique name; changing it creates a new principal.
-- `permissions` (Set of String) Granted permissions: `config.read`, `config.write`, `policy.publish`, `secrets.write`, `tokens.manage`, `usage.read`, `activity.read`, `traces.metadata.read`, `traces.delete`, `events.manage`, `notifications.manage`, `compat.manage`, `audit.read`, `users.manage`, `auth.settings`, `system.manage`.
+- `permissions` (Set of String) Granted permissions: `activity.read`, `audit.read`, `auth.settings`, `compat.manage`, `config.read`, `config.write`, `events.manage`, `notifications.manage`, `policy.publish`, `secrets.write`, `system.manage`, `tokens.manage`, `traces.content.read`, `traces.content.unredacted`, `traces.delete`, `traces.export`, `traces.metadata.read`, `usage.read`, `users.manage`.
 
 ### Optional
 

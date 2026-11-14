@@ -3,7 +3,10 @@
 // provider uses them to send explicit zero values for fields the API marks
 // required but that users may reasonably omit.
 //
-//	go run ./tools/genschema api/openapi.yaml internal/specschema/schemas.json
+//	go run ./tools/genschema api/openapi.yaml internal/specschema/schemas.json internal/specschema/enums.json
+//
+// The third file holds the enums the provider validates by hand: the
+// permissions a service principal can hold and the OIDC provider enums.
 package main
 
 import (
@@ -28,14 +31,15 @@ type Node struct {
 }
 
 type doc struct {
+	Paths      map[string]map[string]any `yaml:"paths"`
 	Components struct {
 		Schemas map[string]map[string]any `yaml:"schemas"`
 	} `yaml:"components"`
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "usage: genschema OPENAPI_YAML OUT_JSON")
+	if len(os.Args) != 4 {
+		fmt.Fprintln(os.Stderr, "usage: genschema OPENAPI_YAML SCHEMAS_JSON ENUMS_JSON")
 		os.Exit(2)
 	}
 	b, err := os.ReadFile(os.Args[1]) //nolint:gosec // developer tool input
@@ -66,6 +70,71 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("schemas:", strings.Join(keys, ", "))
+
+	// RoleMapping.role has no enum of its own: it takes the built-in roles,
+	// which default_role lists (plus "" for none).
+	enums := map[string][]string{
+		"permissions":       permissions(d),
+		"oidc_role":         withoutEmpty(enumAt(d, "OidcBody", "default_role")),
+		"oidc_default_role": enumAt(d, "OidcBody", "default_role"),
+		"oidc_provisioning": enumAt(d, "OidcBody", "provisioning"),
+	}
+	enc, err = json.MarshalIndent(enums, "", " ")
+	if err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(os.Args[3], append(enc, '\n'), 0o644); err != nil { //nolint:gosec // generated source file
+		panic(err)
+	}
+}
+
+// permissions returns every permission the server knows: the x-permission of
+// each operation (except the public and session markers) plus the explicitly
+// grantable trace content permissions (GrantsInBody), in server order.
+func permissions(d doc) []string {
+	seen := map[string]bool{}
+	var out []string
+	add := func(p string) {
+		if p != "" && p != "public" && p != "session" && !seen[p] {
+			seen[p] = true
+			out = append(out, p)
+		}
+	}
+	for _, item := range d.Paths {
+		for _, op := range item {
+			if m, ok := op.(map[string]any); ok {
+				p, _ := m["x-permission"].(string)
+				add(p)
+			}
+		}
+	}
+	for _, p := range enumAt(d, "GrantsInBody", "grants", "items") {
+		add(p)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// enumAt returns the enum found by following properties (and "items") from
+// a component schema.
+func enumAt(d doc, schema string, path ...string) []string {
+	cur := d.Components.Schemas[schema]
+	for _, p := range path {
+		if p == "items" {
+			cur, _ = cur["items"].(map[string]any)
+		} else {
+			props, _ := cur["properties"].(map[string]any)
+			cur, _ = props[p].(map[string]any)
+		}
+		if cur == nil {
+			panic("genschema: no " + strings.Join(path, ".") + " in " + schema)
+		}
+	}
+	var out []string
+	for _, x := range cur["enum"].([]any) {
+		out = append(out, x.(string))
+	}
+	return out
 }
 
 func resolve(d doc, name string, depth int) *Node {
@@ -137,4 +206,14 @@ func node(d doc, s map[string]any, depth int) *Node {
 		n.Minimum = &m
 	}
 	return n
+}
+
+func withoutEmpty(xs []string) []string {
+	var out []string
+	for _, x := range xs {
+		if x != "" {
+			out = append(out, x)
+		}
+	}
+	return out
 }

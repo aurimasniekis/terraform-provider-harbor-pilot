@@ -1,8 +1,12 @@
 package specschema
 
 import (
+	"maps"
+	"os"
 	"slices"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestFillJSON(t *testing.T) {
@@ -221,5 +225,63 @@ func TestProviderModelReasoningSchemaFromV017(t *testing.T) {
 	}
 	if p := r.Props["mode"]; p == nil || !slices.Equal(p.Enum, []string{"auto", "client", "fixed", "off", ""}) {
 		t.Errorf("reasoning.mode enum = %v", p)
+	}
+}
+
+// TestEnumsMatchOpenAPI fails when enums.json is stale: it re-derives the
+// enums from the vendored OpenAPI document without the generator.
+func TestEnumsMatchOpenAPI(t *testing.T) {
+	b, err := os.ReadFile("../../api/openapi.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var d struct {
+		Paths      map[string]map[string]any `yaml:"paths"`
+		Components struct {
+			Schemas map[string]struct {
+				Properties map[string]struct {
+					Enum  []string `yaml:"enum"`
+					Items struct {
+						Enum []string `yaml:"enum"`
+					} `yaml:"items"`
+				} `yaml:"properties"`
+			} `yaml:"schemas"`
+		} `yaml:"components"`
+	}
+	if err := yaml.Unmarshal(b, &d); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{}
+	for _, item := range d.Paths {
+		for _, op := range item {
+			if m, ok := op.(map[string]any); ok {
+				if p, _ := m["x-permission"].(string); p != "" && p != "public" && p != "session" {
+					want[p] = true
+				}
+			}
+		}
+	}
+	for _, g := range d.Components.Schemas["GrantsInBody"].Properties["grants"].Items.Enum {
+		want[g] = true
+	}
+	wantList := slices.Sorted(maps.Keys(want))
+	if got := Enum("permissions"); !slices.Equal(got, wantList) {
+		t.Errorf("permissions = %v, OpenAPI has %v (run make gen)", got, wantList)
+	}
+	for _, p := range []string{"traces.content.read", "traces.content.unredacted", "traces.export"} {
+		if !slices.Contains(Enum("permissions"), p) {
+			t.Errorf("permissions lack %s", p)
+		}
+	}
+	oidc := d.Components.Schemas["OidcBody"].Properties
+	if got := Enum("oidc_default_role"); !slices.Equal(got, oidc["default_role"].Enum) {
+		t.Errorf("oidc_default_role = %v, OpenAPI has %v", got, oidc["default_role"].Enum)
+	}
+	if got := Enum("oidc_provisioning"); !slices.Equal(got, oidc["provisioning"].Enum) {
+		t.Errorf("oidc_provisioning = %v, OpenAPI has %v", got, oidc["provisioning"].Enum)
+	}
+	// RoleMapping.role has no enum of its own: it takes the built-in roles.
+	if got, w := Enum("oidc_role"), slices.DeleteFunc(slices.Clone(oidc["default_role"].Enum), func(s string) bool { return s == "" }); len(w) == 0 || !slices.Equal(got, w) {
+		t.Errorf("oidc_role = %v, OpenAPI has %v", got, w)
 	}
 }

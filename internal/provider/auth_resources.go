@@ -22,12 +22,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/aurimasniekis/terraform-provider-harbor-pilot/internal/client"
+	"github.com/aurimasniekis/terraform-provider-harbor-pilot/internal/specschema"
 )
 
-// Permissions a service principal can hold.
-var permissions = []string{"config.read", "config.write", "policy.publish", "secrets.write", "tokens.manage", "usage.read",
-	"activity.read", "traces.metadata.read", "traces.delete", "events.manage", "notifications.manage", "compat.manage",
-	"audit.read", "users.manage", "auth.settings", "system.manage"}
+// Enums the server defines, generated from the vendored OpenAPI document
+// (make gen), so they cannot drift from it.
+var (
+	// permissions a service principal can hold.
+	permissions      = specschema.Enum("permissions")
+	oidcRoles        = specschema.Enum("oidc_role")
+	oidcDefaultRoles = specschema.Enum("oidc_default_role")
+	oidcProvisioning = specschema.Enum("oidc_provisioning")
+)
 
 // ---------- service principal ----------
 
@@ -380,7 +386,7 @@ func (r *oidcProviderResource) Metadata(_ context.Context, req resource.Metadata
 }
 
 func (r *oidcProviderResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	roles := []validator.String{stringvalidator.OneOf("admin", "operator", "viewer")}
+	roles := []validator.String{stringvalidator.OneOf(oidcRoles...)}
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "An OpenID Connect single sign-on provider. Register `redirect_uri` with the identity provider. " +
 			"Give the client secret as a reference (`client_secret_ref`) or write-only (`client_secret_wo`, Terraform 1.11+); it is never stored in state.",
@@ -407,8 +413,8 @@ func (r *oidcProviderResource) Schema(_ context.Context, _ resource.SchemaReques
 					"role":  schema.StringAttribute{Required: true, Validators: roles},
 				}}},
 			"default_role": schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString(""),
-				Validators: []validator.String{stringvalidator.OneOf("admin", "operator", "viewer", "")}},
-			"provisioning": schema.StringAttribute{Required: true, Validators: []validator.String{stringvalidator.OneOf("preprovisioned", "jit")},
+				Validators: []validator.String{stringvalidator.OneOf(oidcDefaultRoles...)}},
+			"provisioning": schema.StringAttribute{Required: true, Validators: []validator.String{stringvalidator.OneOf(oidcProvisioning...)},
 				MarkdownDescription: "`preprovisioned` (users must exist) or `jit` (created on first sign-in; needs `allowed_domains` or `role_mappings`)."},
 			"allowed_domains": schema.SetAttribute{ElementType: types.StringType, Optional: true},
 			"allowed_algs": schema.ListAttribute{ElementType: types.StringType, Optional: true, Computed: true,

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 (2026-11-14)
+
+Works with Harbor Pilot 0.1 servers (the vendored OpenAPI document is unchanged from 0.1.7).
+
+- Fixes `harborpilot_service_principal` `permissions` rejecting `traces.content.read`, `traces.content.unredacted` and `traces.export`, which the server supports. The accepted permissions are now generated from the vendored OpenAPI document (every operation's `x-permission` plus the grantable trace content permissions) instead of a hand-written list, so they cannot drift from the server. A test fails if the generated list and the OpenAPI document differ. An unknown permission is still rejected at plan time.
+- The `harborpilot_oidc_provider` `role_mappings[].role`, `default_role` and `provisioning` enums are generated from the OpenAPI document the same way (same values as before).
+- `make gen` now also writes `internal/specschema/enums.json`.
+
 ## 0.1.4 (2026-11-14)
 
 For Harbor Pilot 0.1.7 or later. The reasoning option needs 0.1.7; everything else also works with older Harbor Pilot 0.1 servers.
