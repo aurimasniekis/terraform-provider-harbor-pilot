@@ -1,0 +1,38 @@
+{
+ "oidc_default_role": [
+  "admin",
+  "operator",
+  "viewer",
+  ""
+ ],
+ "oidc_provisioning": [
+  "preprovisioned",
+  "jit"
+ ],
+ "oidc_role": [
+  "admin",
+  "operator",
+  "viewer"
+ ],
+ "permissions": [
+  "activity.read",
+  "audit.read",
+  "auth.settings",
+  "compat.manage",
+  "config.read",
+  "config.write",
+  "events.manage",
+  "notifications.manage",
+  "policy.publish",
+  "secrets.write",
+  "system.manage",
+  "tokens.manage",
+  "traces.content.read",
+  "traces.content.unredacted",
+  "traces.delete",
+  "traces.export",
+  "traces.metadata.read",
+  "usage.read",
+  "users.manage"
+ ]
+}
