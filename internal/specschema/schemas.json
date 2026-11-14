@@ -1038,6 +1038,71 @@
         }
        }
       },
+      "reasoning": {
+       "type": "object",
+       "props": {
+        "budget_tokens": {
+         "type": "integer",
+         "minimum": 0
+        },
+        "effort": {
+         "type": "string",
+         "enum": [
+          "minimal",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          ""
+         ]
+        },
+        "efforts": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "history": {
+         "type": "string",
+         "enum": [
+          "drop",
+          "field",
+          ""
+         ]
+        },
+        "history_field": {
+         "type": "string"
+        },
+        "max_budget_tokens": {
+         "type": "integer",
+         "minimum": 0
+        },
+        "mode": {
+         "type": "string",
+         "enum": [
+          "auto",
+          "client",
+          "fixed",
+          "off",
+          ""
+         ]
+        },
+        "style": {
+         "type": "string",
+         "enum": [
+          "anthropic_thinking",
+          "openai_reasoning_effort",
+          "openai_responses_reasoning",
+          "openrouter_reasoning",
+          "deepseek_thinking",
+          "gemini_thinking_config",
+          "none",
+          ""
+         ]
+        }
+       }
+      },
       "request_field_policy": {
        "type": "string",
        "enum": [
